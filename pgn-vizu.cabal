@@ -16,13 +16,16 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+  ghc-options:         -Wall -Werror
   build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , parsec
   default-language:    Haskell2010
 
-executable pgn-vizu-exe
+executable pgn-vizu
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:       base
                      , pgn-vizu
   default-language:    Haskell2010
