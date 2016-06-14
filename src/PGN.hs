@@ -1,10 +1,14 @@
 module PGN
     ( Match(..)
     , Move(..)
+    , Color(..)
     , Ply(..)
     , Glyph(..)
+    , Annotation(..)
+    , Comment
     , Header(..)
     , ParseError
+    , ResultValue(..)
     , parseFile
     , variant
     ) where
@@ -18,15 +22,15 @@ parseFile :: FilePath -> IO (Either ParseError Match)
 parseFile file = parseFromFile match file
 
 data Match = Match { matchHeaders :: [Header]
-                   , matchMoves   :: [Move]
+                   , matchMoves   :: Move
                    } deriving (Show)
 
 data Header = Event String
             | Site String
             | Date String
             | Round String
-            | White String
-            | Black String
+            | WhitePlayer String
+            | BlackPlayer String
             | Result ResultValue
             | WhiteElo Int
             | BlackElo Int
@@ -40,13 +44,21 @@ data Header = Event String
             | Other String String
               deriving (Show)
 
-data Move = Move Int Ply Ply
-          | FinalMove Int (Maybe Ply) (Maybe Ply) ResultValue
+data Color = White | Black deriving (Show)
+
+data Move = Move { number   :: Int
+                 , color    :: Color
+                 , ply      :: Ply
+                 , next     :: Move
+                 , variants :: [Move]
+                 }
+          | End ResultValue
+          | VariantEnd
            deriving (Show)
 
-data Ply = Ply String
-         | AnnotatedPly String (Maybe Glyph) [Comment]
-           deriving (Show)
+data Ply = Ply String [Annotation] deriving (Show)
+
+data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
 
 newtype Glyph = Glyph Int deriving (Show)
 type Comment = String
@@ -64,8 +76,8 @@ parseHeader "Event"       = Event
 parseHeader "Site"        = Site
 parseHeader "Date"        = Date
 parseHeader "Round"       = Round
-parseHeader "White"       = White
-parseHeader "Black"       = Black
+parseHeader "White"       = WhitePlayer
+parseHeader "Black"       = BlackPlayer
 parseHeader "Result"      = Result . readResultValue
 parseHeader "WhiteElo"    = WhiteElo . read
 parseHeader "BlackElo"    = BlackElo . read
@@ -79,35 +91,45 @@ parseHeader "Annotator"   = Annotator
 parseHeader h             = Other h
 
 match :: Parser Match
-match = Match <$> headers <*> moves <* eof
+match = Match <$> headers <*> (spaces *> move 0 <* spaces <* eof)
 
-moves :: Parser [Move]
-moves = spaces *> many move
+move :: Int -> Parser Move
+move n = do
+  r <- result
+  if isJust r
+  then return $ fromJust r
+  else do
+    spaces
+    moveNumber <- optionMaybe $ try (many1 digit <* char '.' <* spaces)
+    somePly <- ply'
+    let color' = if isJust moveNumber then White else Black
+    let n' = if isJust moveNumber then read (fromJust moveNumber) else n
+    let variants' = []
+    () <$ many (try variant <* spaces)
+    () <$ optionMaybe (try (continuation n') <* spaces)
+    spaces
+    next' <- move n'
+    return $ Move n' color' somePly next' variants'
 
-move :: Parser Move
-move = do
-  moveNumber <- read <$> many1 digit <* char '.' <* spaces
-  whitePly <- optionMaybe (ply moveNumber)
-  r1 <- result <* spaces
-  blackPly <- optionMaybe (try (ply moveNumber))
-  r2 <- result <* spaces
-  let r = r1 A.<|> r2
-  case r of
-    Nothing -> return $ Move moveNumber (fromJust whitePly) (fromJust blackPly)
-    Just rv -> return $ FinalMove moveNumber whitePly blackPly rv
-
-ply :: Int -> Parser Ply
-ply moveNumber = do
+ply' :: Parser Ply
+ply' = do
   m <- many1 (oneOf "abcdefgh12345678NBRQKx+#=O-")
-  g1 <- optionMaybe traditionalGlyph <* spaces
-  g2 <- optionMaybe glyph <* spaces
-  let g = g1 A.<|> g2
-  c <- many (try (comment <* spaces))
-  () <$ many (try variant <* spaces)
-  () <$ optionMaybe (try (continuation moveNumber) <* spaces)
-  if isJust g || not (null c)
-  then return $ AnnotatedPly m g c
-  else return $ Ply m
+  glyph1 <- optionMaybe traditionalGlyph <* spaces
+  glyph2 <- optionMaybe glyph <* spaces
+  comments <- many (try (comment <* spaces))
+  let glyph' = glyph1 A.<|> glyph2
+  let annotations = mkAnnotations glyph' comments
+  return $ Ply m annotations
+
+mkAnnotations :: Maybe Glyph -> [Comment] -> [Annotation]
+mkAnnotations g cs = mkGlyphAnnotation g ++ mkCommentAnnotations cs
+
+mkGlyphAnnotation :: Maybe Glyph -> [Annotation]
+mkGlyphAnnotation Nothing = []
+mkGlyphAnnotation (Just g) = [GlyphAnnotation g]
+
+mkCommentAnnotations :: [Comment] -> [Annotation]
+mkCommentAnnotations = map CommentAnnotation
 
 continuation :: Int -> Parser ()
 continuation m = () <$ string (show m) <* string "..."
@@ -140,8 +162,8 @@ tries = choice . map try
 comment :: Parser Comment
 comment = char '{' *> spaces *> manyTill anyChar (try (spaces >> char '}'))
 
-result :: Parser (Maybe ResultValue)
-result = (fmap readResultValue) <$> optionMaybe (tries [string "1/2-1/2", string "1-0", string "0-1", string "*"])
+result :: Parser (Maybe Move)
+result = (fmap (End . readResultValue)) <$> optionMaybe (tries [string "1/2-1/2", string "1-0", string "0-1", string "*"])
 
 textBetween :: Char -> Char -> Parser String
 textBetween c1 c2 = between (char c1) (char c2) (content)
