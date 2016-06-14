@@ -1,4 +1,4 @@
-module Lib
+module PGN
     ( Match(..)
     , Move(..)
     , Ply(..)

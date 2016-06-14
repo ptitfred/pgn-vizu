@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import PGN
 
 import Control.Monad (unless)
 import Data.List (intersperse)
