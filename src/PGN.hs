@@ -14,7 +14,7 @@ module PGN
     ) where
 
 import qualified Control.Applicative as A ((<|>))
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, isJust, fromMaybe)
 import Text.Parsec
 import Text.Parsec.ByteString (Parser, parseFromFile)
 
@@ -100,16 +100,17 @@ move n = do
   then return $ fromJust r
   else do
     spaces
-    moveNumber <- optionMaybe $ try (many1 digit <* char '.' <* spaces)
+    n' <- fromMaybe n <$> moveNumber
+    let color' = if n' > n
+                 then White
+                 else Black
     somePly <- ply'
-    let color' = if isJust moveNumber then White else Black
-    let n' = if isJust moveNumber then read (fromJust moveNumber) else n
-    let variants' = []
-    () <$ many (try variant <* spaces)
-    () <$ optionMaybe (try (continuation n') <* spaces)
+    -- consume variants ; TODO: parse them
+    variants'
+    continuation n'
     spaces
     next' <- move n'
-    return $ Move n' color' somePly next' variants'
+    return $ Move n' color' somePly next' []
 
 ply' :: Parser Ply
 ply' = do
@@ -132,7 +133,7 @@ mkCommentAnnotations :: [Comment] -> [Annotation]
 mkCommentAnnotations = map CommentAnnotation
 
 continuation :: Int -> Parser ()
-continuation m = () <$ string (show m) <* string "..."
+continuation m = () <$ optionMaybe (try (string (show m) <* string "..."))
 
 glyph :: Parser Glyph
 glyph = (Glyph . read) <$> try (char '$' *> many1 digit)
@@ -153,6 +154,9 @@ traditionalGlyph =
     where toGlyph :: String -> Int -> Parser Glyph
           toGlyph text g = Glyph g <$ string text
 
+variants' :: Parser ()
+variants' = () <$ many (try variant <* spaces)
+
 variant :: Parser ()
 variant = () <$ textBetween '(' ')'
 
@@ -161,6 +165,9 @@ tries = choice . map try
 
 comment :: Parser Comment
 comment = char '{' *> spaces *> manyTill anyChar (try (spaces >> char '}'))
+
+moveNumber :: Parser (Maybe Int)
+moveNumber = (fmap read) <$> optionMaybe (try (many1 digit <* char '.' <* spaces))
 
 result :: Parser (Maybe Move)
 result = (fmap (End . readResultValue)) <$> optionMaybe (tries [string "1/2-1/2", string "1-0", string "0-1", string "*"])
