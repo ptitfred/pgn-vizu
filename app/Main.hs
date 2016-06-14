@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import PGN
 
 import Control.Monad (unless)
 import Data.List (intersperse)
@@ -59,50 +59,59 @@ printMatch m = do
   putStrLn "Headers:"
   mapM_ (indented 1) $ matchHeaders m
   putStrLn ""
-  putStrLn "Moves:"
-  mapM_ (\mv -> putStr "  " >> printMove mv) $ matchMoves m
+  putStr "Moves:"
+  printMove $ matchMoves m
 
 printMove :: Move -> IO ()
-printMove (Move number white black) = do
-  printMoveNumber number
-  printPly white
-  putStr " "
-  printPly black
+printMove VariantEnd = return ()
+printMove (End result) = do
   putStrLn ""
-printMove (FinalMove number white black result) = do
-  printMoveNumber number
-  printMaybePly white
-  putStr " "
-  printMaybePly black
-  putStrLn ""
-  putStr " => "
-  print result
+  putStr "      "
+  printResult result
+printMove (Move n c p nx vs) = do
+  case c of
+    White -> do
+      putStrLn ""
+      putStr "  "
+      printMoveNumber n
+    Black -> return ()
+  printPly p
+  unless (null vs) $ do
+    putStr $ (show $ length vs) ++ " variants"
+  case c of
+    White -> putStr " "
+    Black -> return ()
+  printMove nx
+
+printResult :: ResultValue -> IO ()
+printResult WhiteWins = putStrLn "white wins"
+printResult BlackWins = putStrLn "black wins"
+printResult Draw      = putStrLn "draw"
+printResult _         = putStrLn "uncertain"
 
 printMoveNumber :: Int -> IO ()
-printMoveNumber number = putStr $ lpad 4 (show number ++ ". ")
-
-printMaybePly :: Maybe Ply -> IO ()
-printMaybePly = printMaybe printPly
+printMoveNumber n = putStr $ lpad 4 (show n ++ ". ")
 
 printPly :: Ply -> IO ()
-printPly (Ply m) = putStr (lpad 11 m)
-printPly (AnnotatedPly m g cs) = do
+printPly (Ply m annotations) = do
   putStr (lpad 11 m)
-  printMaybeGlyph g
-  unless (null cs) $ do
-    putStr " « "
-    putStr $ unwords cs
-    putStr " »"
+  printAnnotations annotations
 
-printMaybeGlyph :: Maybe Glyph -> IO ()
-printMaybeGlyph = printMaybe printGlyph
+printAnnotations :: [Annotation] -> IO ()
+printAnnotations [] = return ()
+printAnnotations as = do
+  putStr " "
+  sequence_ $ intersperse (putStr " ") $ map printAnnotation as
 
-printMaybe :: (a -> IO ()) -> Maybe a -> IO ()
-printMaybe action (Just v) = action v
-printMaybe _      Nothing  = return ()
+printAnnotation :: Annotation -> IO ()
+printAnnotation (GlyphAnnotation g)   = printGlyph g
+printAnnotation (CommentAnnotation c) = printComment c
 
 printGlyph :: Glyph -> IO ()
-printGlyph (Glyph v) = putStr (" $" ++ show v)
+printGlyph (Glyph v) = putStr ("$" ++ show v)
+
+printComment :: Comment -> IO ()
+printComment c = putStr $ "« " ++ c ++ " »"
 
 indented :: Show a => Int -> a -> IO ()
 indented width o = do
