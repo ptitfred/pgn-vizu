@@ -14,4 +14,34 @@
 [Termination "Normal"]
 [Annotator "lichess.org"]
 
-1. e4 c5 2. Nf3 Nc6 { B30 Sicilian Defense: Old Sicilian } 3. Nc3 d5 4. d3 d4 5. Nb5 Qa5+ 6. Bd2 Qxb5 7. c4 Qxb2 8. Rb1 Qxa2 9. Bf4 Nf6 10. Ne5 Nxe5 11. Bxe5 b6 12. Bxf6 gxf6 13. Rb5 Bh6 14. Qe2 Qa1+ 15. Qd1 Qc3+ 16. Ke2 f5 17. Rb3 Qc1 18. Qxc1 Bxc1 19. Rb1 Ba3 20. Ke1 fxe4 21. Ke2 exd3+ 22. Kf3 Rg8 23. Kf4 d2 24. Ke5 f6+ 25. Kd5 e6+ 26. Kd6 Kf7 27. Kc7 Re8 28. Kd6 Rd8+ 29. Kc6 Ba6 30. Kc7 Rab8 31. Kc6 Rbc8# { White is checkmated } 0-1
+ 1. e4   c5
+ 2. Nf3  Nc6 { B30 Sicilian Defense: Old Sicilian }
+ 3. Nc3  d5
+ 4. d3   d4
+ 5. Nb5  Qa5+
+ 6. Bd2  Qxb5
+ 7. c4   Qxb2
+ 8. Rb1  Qxa2
+ 9. Bf4  Nf6
+10. Ne5  Nxe5
+11. Bxe5 b6
+12. Bxf6 gxf6
+13. Rb5  Bh6
+14. Qe2  Qa1+
+15. Qd1  Qc3+
+16. Ke2  f5!
+17. Rb3  Qc1?
+18. Qxc1 Bxc1!!
+19. Rb1  Ba3??
+20. Ke1  fxe4!?
+21. Ke2  exd3+?!
+22. Kf3  Rg8 +/-
+23. Kf4  d2 -/+
+24. Ke5  f6+
+25. Kd5  e6+
+26. Kd6  Kf7
+27. Kc7  Re8
+28. Kd6  Rd8+
+29. Kc6  Ba6
+30. Kc7  Rab8
+31. Kc6  Rbc8# { White is checkmated } 0-1

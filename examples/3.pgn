@@ -1,0 +1,17 @@
+[Event "Casual game"]
+[Site "https://lichess.org/84cqet9X"]
+[Date "2016.05.16"]
+[White "hapcenter"]
+[Black "ptitfred"]
+[Result "0-1"]
+[WhiteElo "1577"]
+[BlackElo "1553"]
+[PlyCount "90"]
+[Variant "Standard"]
+[TimeControl "900+0"]
+[ECO "B20"]
+[Opening "Sicilian Defense: Bowdler Attack"]
+[Termination "Time forfeit"]
+[Annotator "lichess.org"]
+
+1. e4 c5 2. Bc4 { B20 Sicilian Defense: Bowdler Attack } e6 3. Nc3 d5 4. exd5 Nf6 5. dxe6 Bxe6 6. Bxe6 Qe7 7. Qe2 Qxe6 8. Qxe6+ fxe6 9. Nb5 Kd7 10. d3 Nc6 11. Nf3 a6 12. Nc3 b5 13. O-O Bd6 14. Bg5 Ng4 15. h3 Nge5 16. Nxe5+ Bxe5 17. Ne4 Bxb2 18. Rae1 Ba3 19. c3 c4 20. dxc4 bxc4 21. Rd1+ Kc7 22. Bf4+ e5 23. Be3 Rhd8 24. Rxd8 Rxd8 25. Ng5 Rd3 26. Ne6+ Kd6 27. Nxg7 Rxc3 28. Nf5+ Ke6 29. Ng7+ Kf7 30. Nf5 Nb4 31. Nd6+ Ke6 32. Ne4 Rd3 33. Nc5+ Kd5 34. Nxd3 Nxd3 35. Rd1 e4 36. f4 c3 37. f5 c2 38. Rf1 c1=Q 39. Bxc1 Bxc1 40. f6 Ba3 41. f7 Bc5+ 42. Kh1 Nf2+ 43. Kh2 e3 44. Kg3 Ke6 45. f8=Q Bxf8 { White forfeits on time } 0-1

@@ -1,0 +1,24 @@
+[Event "Casual game"]
+[Site "https://lichess.org/84cqet9X"]
+[Date "2016.05.16"]
+[White "hapcenter"]
+[Black "ptitfred"]
+[Result "0-1"]
+[WhiteElo "1577"]
+[BlackElo "1553"]
+[PlyCount "90"]
+[Variant "Standard"]
+[TimeControl "900+0"]
+[ECO "B20"]
+[Opening "Sicilian Defense: Bowdler Attack"]
+[Termination "Time forfeit"]
+[Annotator "lichess.org"]
+
+1. e4 c5 2. Bc4 { B20 Sicilian Defense: Bowdler Attack } e6 3. Nc3 d5?
+{ (0.01 → 1.08) Mistake. Best move was Nc6. }
+    (3... Nc6 4. Nf3 Nf6 5. O-O d5 6. exd5 exd5 7. Bb5 Be7 8. d4 O-O 9. Be3 c4 10. Re1)
+4. exd5 Nf6 5. dxe6 Bxe6 6. Bxe6 Qe7 7. Qe2 Qxe6 8. Qxe6+ fxe6 9. Nb5 Kd7
+10. d3 Nc6 11. Nf3 a6 12. Nc3 b5 13. O-O Bd6 14. Bg5 Ng4?!
+{ (0.79 → 1.65) Inaccuracy. Best move was Nd4. }
+    (14... Nd4 15. Nxd4 cxd4 16. Ne2 e5 17. Bd2 Nd5 18. Rfc1 Rhc8 19. a3 Rc5 20. c3 dxc3 21. Nxc3)
+15. h3 Nge5 16. Nxe5+ Bxe5 17. Ne4 Bxb2 18. Rae1 Ba3 19. c3?! { (1.44 → 0.88) Inaccuracy. Best move was Be3. } (19. Be3 Nd4 20. c3 Nc2 21. Bxc5 Nxe1 22. Bxa3 Nxd3 23. Rd1 Kc6 24. Rxd3 Rhd8 25. Re3 Rd5) 19... c4 20. dxc4 bxc4 21. Rd1+ Kc7 22. Bf4+?! { (1.53 → 0.99) Inaccuracy. Best move was Nd2. } (22. Nd2 Be7 23. Bf4+ e5 24. Be3 Na5 25. f4 Rhf8 26. fxe5 Rad8 27. Rxf8 Bxf8 28. Rf1 Kc6) 22... e5 23. Be3 Rhd8 24. Rxd8?! { (0.77 → 0.22) Inaccuracy. Best move was Ng5. } (24. Ng5 Rxd1) 24... Rxd8 25. Ng5 Rd3 26. Ne6+?! { (-0.10 → -0.89) Inaccuracy. Best move was Ne4. } (26. Ne4 Ne7 27. Nd2 Nc6 28. Ne4 Ne7 29. Nd2 Nf5 30. Nxc4 Rxc3 31. Nxe5 Nxe3 32. fxe3 Bc5) 26... Kd6 27. Nxg7 Rxc3 28. Nf5+? { (-0.20 → -1.48) Mistake. Best move was Rb1. } (28. Rb1 Rd3 29. Rb6 Rxe3 30. Nf5+ Kc5 31. Nxe3 Kxb6 32. Nxc4+ Kc5 33. Nxa3 Nb4 34. Kf1 Nxa2) 28... Ke6 29. Ng7+ Kf7 30. Nf5 Nb4? { (-1.59 → -0.21) Mistake. Best move was Rd3. } (30... Rd3 31. Bc1 Bc5 32. Be3 Nd4 33. f4 Nxf5 34. Bxc5 Ng3 35. Re1 exf4 36. Bb4 c3 37. Kf2) 31. Nd6+ Ke6 32. Ne4 Rd3?! { (-0.60 → 0.00) Inaccuracy. Best move was Rc2. } (32... Rc2 33. Rd1 Nd3 34. Ng5+ Kd5 35. Nxh7 Be7 36. Rd2 Rxd2 37. Bxd2 Kd4 38. Be3+ Ke4 39. Kf1) 33. Nc5+ Kd5 34. Nxd3 Nxd3 35. Rd1 e4 36. f4? { (0.00 → -2.07) Mistake. Best move was Rd2. } (36. Rd2 c3 37. Re2 Nb4 38. Kf1 a5 39. Bg5 c2 40. Rd2+ Kc4 41. Re2 Kd5 42. Rd2+ Kc4) 36... c3 37. f5 c2 38. Rf1 c1=Q 39. Bxc1 Bxc1? { (-1.74 → -0.57) Mistake. Best move was Nxc1. } (39... Nxc1 40. Kf2 Bc5+ 41. Kg3 Ne2+ 42. Kg4 e3 43. Re1 Nc3 44. Kf3 e2 45. a4 Be7 46. a5) 40. f6 Ba3 41. f7?? { (-0.41 → -4.67) Blunder. Best move was Rb1. } (41. Rb1 Bc5+ 42. Kf1 Ke6 43. Rb7 Kxf6 44. Rxh7 Ke5 45. Rh6 a5 46. Ra6 Bb4 47. a3 Bc3) 41... Bc5+ 42. Kh1 Nf2+?? { (-3.88 → 4.79) Blunder. Best move was e3. } (42... e3 43. Rf5+ Ne5 44. f8=Q Bxf8 45. Kg1 Bb4 46. Kf1 Ke4 47. Rg5 Nc6 48. Rg8 Nd4 49. Re8+) 43. Kh2?? { (4.79 → -0.89) Blunder. Best move was Rxf2. } (43. Rxf2 Bf8 44. Kg1 Ke6 45. Kf1 Ke7 46. Rf4 e3 47. Ke2 Bh6 48. Rf5 Kf8 49. g4 a5) 43... e3 44. Kg3? { (-0.99 → -3.82) Mistake. Best move was Rc1. } (44. Rc1 Bd6+ 45. g3 Nd3 46. Rc3 Kd4 47. Rc6 Be7 48. Re6 Bc5 49. Kg2 Ne5 50. Kf1 Nxf7) 44... Ke6?? { (-3.82 → -0.80) Blunder. Best move was Ke4. } (44... Ke4 45. Rc1 Bd6+ 46. Kh4 Nd3 47. Rc4+ Kd5 48. Rc2 Ne5 49. Kg5 Nxf7+ 50. Kf5 Ne5 51. Rb2) 45. f8=Q? { (-0.80 → -2.00) Mistake. Best move was Rc1. } (45. Rc1 Kxf7 46. Kf3 Nd3 47. Rc3 Ne5+ 48. Ke2 Nd7 49. Rc4 a5 50. Re4 Kf6 51. Rh4 Kg6) 45... Bxf8 { White forfeits on time } 0-1
