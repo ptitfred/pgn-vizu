@@ -3,6 +3,7 @@ module PGN
     , Move(..)
     , Color(..)
     , PieceMove(..)
+    , Check(..)
     , Glyph(..)
     , Annotation(..)
     , Comment
@@ -48,6 +49,7 @@ data Color = White | Black deriving (Show)
 data Move = HalfMove { moveNumber      :: Int
                      , moveColor       :: Color
                      , movePieceMove   :: PieceMove
+                     , moveCheck       :: Check
                      , moveAnnotations :: [Annotation]
                      , moveNext        :: Move
                      , moveVariants    :: [Move]
@@ -57,6 +59,7 @@ data Move = HalfMove { moveNumber      :: Int
            deriving (Show)
 
 newtype PieceMove = PieceMove String deriving (Show)
+data Check = None | Check | Mate deriving (Show)
 
 data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
 type Annotations = [Annotation]
@@ -120,12 +123,14 @@ parseHalfMove :: Int -> Parser Move
 parseHalfMove previousNumber = do
   number      <- spaces *> parseMoveNumber previousNumber
   pieceMove   <- parsePieceMove
+  check       <- parseCheck
   annotations <- parseAnnotations
   variants    <- parseVariants number
   next        <- parseContinuation number *> spaces *> parseMove number
   return $ HalfMove { moveNumber      = number
                     , moveColor       = chooseColor (number > previousNumber)
                     , movePieceMove   = pieceMove
+                    , moveCheck       = check
                     , moveAnnotations = annotations
                     , moveNext        = next
                     , moveVariants    = variants
@@ -143,7 +148,15 @@ parseAnnotations = do
   return $ mkAnnotations (litteral A.<|> nag) comments
 
 parsePieceMove :: Parser PieceMove
-parsePieceMove = PieceMove <$> many1 (oneOf "abcdefgh12345678NBRQKx+#=O-")
+parsePieceMove = PieceMove <$> tries [ string "O-O-O"
+                                     , string "O-O"
+                                     , many1 (oneOf "abcdefgh12345678NBRQKx=")
+                                     ]
+
+parseCheck :: Parser Check
+parseCheck = triesOr [ Check <$ char '+'
+                     , Mate  <$ char '#'
+                     ] None
 
 parseContinuation :: Int -> Parser ()
 parseContinuation m = () <$ optionMaybe (try (string (show m) <* string "..."))
@@ -217,3 +230,6 @@ eithers (alt:alts) main = do
 
 tries :: [Parser a] -> Parser a
 tries = choice . map try
+
+triesOr :: [Parser a] -> a -> Parser a
+triesOr alternatives defaultValue = tries alternatives <|> return defaultValue

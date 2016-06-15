@@ -68,7 +68,7 @@ printMove (End result) = do
   putStrLn ""
   putStr "      "
   printResult result
-printMove (HalfMove n c pm as nx vs) = do
+printMove (HalfMove n c pm ch as nx vs) = do
   case c of
     White -> do
       putStrLn ""
@@ -76,6 +76,7 @@ printMove (HalfMove n c pm as nx vs) = do
       printMoveNumber n
     Black -> return ()
   printPieceMove pm
+  printCheck ch
   printAnnotations as
   unless (null vs) $ do
     printVariants vs
@@ -84,7 +85,7 @@ printMove (HalfMove n c pm as nx vs) = do
              then putStr " "
              else do
                putStrLn ""
-               putStr $ lpad (2 + 4 + 11 + 1) ""
+               putStr $ lpad (2 + 4 + 10 + 1 + 1) ""
     Black -> return ()
   printMove nx
 
@@ -103,7 +104,12 @@ printMoveNumber :: Int -> IO ()
 printMoveNumber n = putStr $ lpad 4 (show n ++ ". ")
 
 printPieceMove :: PieceMove -> IO ()
-printPieceMove (PieceMove pm) = putStr (lpad 11 pm)
+printPieceMove (PieceMove pm) = putStr (lpad 10 pm)
+
+printCheck :: Check -> IO ()
+printCheck None  = putStr " "
+printCheck Check = putStr "+"
+printCheck Mate  = putStr "#"
 
 printAnnotations :: [Annotation] -> IO ()
 printAnnotations [] = return ()
