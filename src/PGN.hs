@@ -2,6 +2,7 @@ module PGN
     ( Match(..)
     , Move(..)
     , Color(..)
+    , PieceMove(..)
     , Glyph(..)
     , Annotation(..)
     , Comment
@@ -46,7 +47,7 @@ data Color = White | Black deriving (Show)
 
 data Move = HalfMove { moveNumber      :: Int
                      , moveColor       :: Color
-                     , moveDescription :: String
+                     , movePieceMove   :: PieceMove
                      , moveAnnotations :: [Annotation]
                      , moveNext        :: Move
                      , moveVariants    :: [Move]
@@ -54,6 +55,8 @@ data Move = HalfMove { moveNumber      :: Int
           | End ResultValue
           | VariantEnd
            deriving (Show)
+
+newtype PieceMove = PieceMove String deriving (Show)
 
 data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
 type Annotations = [Annotation]
@@ -116,13 +119,13 @@ parseVariantEnd = optionMaybe (VariantEnd <$ try (spaces *> char ')'))
 parseHalfMove :: Int -> Parser Move
 parseHalfMove previousNumber = do
   number      <- spaces *> parseMoveNumber previousNumber
-  description <- parsePlyDescription
+  pieceMove   <- parsePieceMove
   annotations <- parseAnnotations
   variants    <- parseVariants number
   next        <- parseContinuation number *> spaces *> parseMove number
   return $ HalfMove { moveNumber      = number
                     , moveColor       = chooseColor (number > previousNumber)
-                    , moveDescription = description
+                    , movePieceMove   = pieceMove
                     , moveAnnotations = annotations
                     , moveNext        = next
                     , moveVariants    = variants
@@ -139,8 +142,8 @@ parseAnnotations = do
   comments <- parseComments
   return $ mkAnnotations (litteral A.<|> nag) comments
 
-parsePlyDescription :: Parser String
-parsePlyDescription = many1 (oneOf "abcdefgh12345678NBRQKx+#=O-")
+parsePieceMove :: Parser PieceMove
+parsePieceMove = PieceMove <$> many1 (oneOf "abcdefgh12345678NBRQKx+#=O-")
 
 parseContinuation :: Int -> Parser ()
 parseContinuation m = () <$ optionMaybe (try (string (show m) <* string "..."))
