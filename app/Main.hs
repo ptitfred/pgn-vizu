@@ -3,21 +3,39 @@ module Main where
 import PGN
 import Printer
 
-import Data.List (intersperse)
-import System.Environment (getArgs)
-import System.Exit (ExitCode(..), exitSuccess, exitWith)
+import Control.Applicative ((<|>))
+import Data.List           (intersperse)
+import Data.Maybe          (fromMaybe)
+import System.Environment  (getArgs, lookupEnv)
+import System.Exit         (ExitCode(..), exitSuccess, exitWith)
 
 main :: IO ()
-main = getArgs >>= dispatch
+main = do
+  locale <- getLocale
+  args   <- getArgs
+  dispatch locale args
 
-dispatch :: [String] -> IO ()
-dispatch ("check" : files) = mapM checkFile files >>= exit
-dispatch ("show"  : files) = sequence_ $ intersperse delimiter $ map showFilePath files
-dispatch ("help"  : _    ) = help
-dispatch ("-h"    : _    ) = help
-dispatch ("--help": _    ) = help
-dispatch (unknown : _    ) = putStrLn $ "Unknown action " ++ unknown
-dispatch []                 = help
+getLocale :: IO Locale
+getLocale = do
+  messages <- lookupEnv "LC_MESSAGES"
+  lang <- lookupEnv "LANG"
+  let locale = fromMaybe "en" $ messages <|> lang
+  case (take 2 locale) of
+    "fr" -> return French
+    _    -> return English
+
+dispatch :: Locale -> [String] -> IO ()
+dispatch _      ("check" : files) = mapM checkFile files >>= exit
+dispatch locale ("show"  : files) = sequence_ $ intersperse delimiter $ map (showFilePath locale) files
+dispatch locale ("help"  : _    ) = help locale
+dispatch locale ("-h"    : _    ) = help locale
+dispatch locale ("--help": _    ) = help locale
+dispatch locale (action  : _    ) = unknown locale action
+dispatch locale []                = help locale
+
+unknown :: Locale -> String -> IO ()
+unknown English a = putStrLn $ "Unknown action " ++ a
+unknown French  a = putStrLn $ "Action " ++ a ++ " inconnue"
 
 delimiter :: IO ()
 delimiter = putStrLn ""
@@ -29,14 +47,21 @@ exit checks =
   else exitWith (ExitFailure failures)
     where failures = length $ filter not checks
 
-help :: IO ()
-help = do
+help :: Locale -> IO ()
+help English = do
   putStrLn "Commands:"
-  putStrLn " show files*  : browse PGN files"
+  putStrLn " show files*  : show content of PGN files"
   putStrLn ""
   putStrLn " check files* : attempt to parse PGN files"
   putStrLn ""
   putStrLn " help         : this message"
+help French = do
+  putStrLn "Commandes:"
+  putStrLn " show fichiers*  : affiche le contenu des fichiers PGN"
+  putStrLn ""
+  putStrLn " check fichiers* : essaie de lire les fichiers PGN"
+  putStrLn ""
+  putStrLn " help            : ce message"
 
 checkFile :: String -> IO Bool
 checkFile file = do
@@ -47,9 +72,9 @@ checkFile file = do
     where asMessage = indent . show
           indent = unlines . map ("  "++) . lines
 
-showFilePath :: String -> IO ()
-showFilePath f = do
+showFilePath :: Locale -> String -> IO ()
+showFilePath l f = do
   r <- parseFilePath f
   case r of
     Left  e -> print e
-    Right m -> printMatch m
+    Right m -> printMatch l m
