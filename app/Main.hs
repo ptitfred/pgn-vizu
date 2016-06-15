@@ -1,5 +1,6 @@
 module Main where
 
+import Models
 import PGN
 
 import Control.Monad (unless)
@@ -143,7 +144,7 @@ printCheck None  = putStr " "
 printCheck Check = putStr "+"
 printCheck Mate  = putStr "#"
 
-printAnnotations :: [Annotation] -> IO ()
+printAnnotations :: Annotations -> IO ()
 printAnnotations [] = return ()
 printAnnotations as = do
   putStr " "
