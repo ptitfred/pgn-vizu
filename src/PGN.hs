@@ -10,6 +10,7 @@ module PGN
     , ParseError
     , ResultValue(..)
     , parseFile
+    , hasAnnotations
     , variant
     ) where
 
@@ -57,6 +58,10 @@ data Move = Move { number   :: Int
            deriving (Show)
 
 data Ply = Ply String [Annotation] deriving (Show)
+
+hasAnnotations :: Ply -> Bool
+hasAnnotations (Ply _ []) = False
+hasAnnotations _          = True
 
 data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
 

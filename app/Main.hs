@@ -79,7 +79,11 @@ printMove (Move n c p nx vs) = do
   unless (null vs) $ do
     printVariants vs
   case c of
-    White -> putStr " "
+    White -> if hasAnnotations p
+             then do
+               putStrLn ""
+               putStr $ lpad (2 + 4 + 11 + 1) ""
+             else putStr " "
     Black -> return ()
   printMove nx
 
