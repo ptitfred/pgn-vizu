@@ -68,22 +68,23 @@ printMove (End result) = do
   putStrLn ""
   putStr "      "
   printResult result
-printMove (Move n c p nx vs) = do
+printMove (HalfMove n c d as nx vs) = do
   case c of
     White -> do
       putStrLn ""
       putStr "  "
       printMoveNumber n
     Black -> return ()
-  printPly p
+  printDescription d
+  printAnnotations as
   unless (null vs) $ do
     printVariants vs
   case c of
-    White -> if hasAnnotations p
-             then do
+    White -> if null as
+             then putStr " "
+             else do
                putStrLn ""
                putStr $ lpad (2 + 4 + 11 + 1) ""
-             else putStr " "
     Black -> return ()
   printMove nx
 
@@ -101,10 +102,8 @@ printResult _         = putStrLn "uncertain"
 printMoveNumber :: Int -> IO ()
 printMoveNumber n = putStr $ lpad 4 (show n ++ ". ")
 
-printPly :: Ply -> IO ()
-printPly (Ply m annotations) = do
-  putStr (lpad 11 m)
-  printAnnotations annotations
+printDescription :: String -> IO ()
+printDescription description = putStr (lpad 11 description)
 
 printAnnotations :: [Annotation] -> IO ()
 printAnnotations [] = return ()
