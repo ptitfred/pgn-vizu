@@ -95,22 +95,25 @@ match = Match <$> headers <*> (spaces *> move 0 <* spaces <* eof)
 
 move :: Int -> Parser Move
 move n = do
-  r <- result
-  if isJust r
-  then return $ fromJust r
+  v <- optionMaybe (VariantEnd <$ try (spaces *> char ')'))
+  if isJust v
+  then return $ fromJust v
   else do
-    spaces
-    n' <- fromMaybe n <$> moveNumber
-    let color' = if n' > n
-                 then White
-                 else Black
-    somePly <- ply'
-    -- consume variants ; TODO: parse them
-    variants'
-    continuation n'
-    spaces
-    next' <- move n'
-    return $ Move n' color' somePly next' []
+    r <- result
+    if isJust r
+    then return $ fromJust r
+    else do
+      spaces
+      n' <- fromMaybe n <$> moveNumber
+      let color' = if n' > n
+                   then White
+                   else Black
+      somePly <- ply'
+      vs <- variants' n'
+      continuation n'
+      spaces
+      next' <- move n'
+      return $ Move n' color' somePly next' vs
 
 ply' :: Parser Ply
 ply' = do
@@ -142,23 +145,25 @@ glyph = (Glyph . read) <$> try (char '$' *> many1 digit)
 traditionalGlyph :: Parser Glyph
 traditionalGlyph =
   tries
-    [ "!!"  `toGlyph`  3
-    , "??"  `toGlyph`  4
-    , "!?"  `toGlyph`  5
-    , "?!"  `toGlyph`  6
-    , "!"   `toGlyph`  1
-    , "?"   `toGlyph`  2
-    , "+/-" `toGlyph` 16
-    , "-/+" `toGlyph` 17
+    [ "!!"   `toGlyph`  3
+    , "??"   `toGlyph`  4
+    , "!?"   `toGlyph`  5
+    , "?!"   `toGlyph`  6
+    , "!"    `toGlyph`  1
+    , "?"    `toGlyph`  2
+    , "+/-"  `toGlyph` 18
+    , "-/+"  `toGlyph` 19
+    , "±"    `toGlyph` 16
+    , "\194" `toGlyph` 16
     ] -- TODO: support more plain text glyphes
     where toGlyph :: String -> Int -> Parser Glyph
           toGlyph text g = Glyph g <$ string text
 
-variants' :: Parser ()
-variants' = () <$ many (try variant <* spaces)
+variants' :: Int -> Parser [Move]
+variants' m = many (try (variant m) <* spaces)
 
-variant :: Parser ()
-variant = () <$ textBetween '(' ')'
+variant :: Int -> Parser Move
+variant m = char '(' *> continuation m *> spaces *> move m <* spaces
 
 tries :: [Parser a] -> Parser a
 tries = choice . map try

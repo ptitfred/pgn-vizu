@@ -77,11 +77,16 @@ printMove (Move n c p nx vs) = do
     Black -> return ()
   printPly p
   unless (null vs) $ do
-    putStr $ (show $ length vs) ++ " variants"
+    printVariants vs
   case c of
     White -> putStr " "
     Black -> return ()
   printMove nx
+
+printVariants :: [Move] -> IO ()
+printVariants []  = return ()
+printVariants [_] = putStr " 1 variant"
+printVariants vs  = putStr $ " " ++ (show $ length vs) ++ " variants"
 
 printResult :: ResultValue -> IO ()
 printResult WhiteWins = putStrLn "white wins"
