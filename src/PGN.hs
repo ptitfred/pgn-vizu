@@ -2,7 +2,6 @@ module PGN
     ( Match(..)
     , Move(..)
     , Color(..)
-    , Ply(..)
     , Glyph(..)
     , Annotation(..)
     , Comment
@@ -10,7 +9,6 @@ module PGN
     , ParseError
     , ResultValue(..)
     , parseFile
-    , hasAnnotations
     ) where
 
 import qualified Control.Applicative as A ((<|>))
@@ -46,25 +44,19 @@ data Header = Event String
 
 data Color = White | Black deriving (Show)
 
-data Move = Move { moveNumber   :: Int
-                 , moveColor    :: Color
-                 , movePly      :: Ply
-                 , moveNext     :: Move
-                 , moveVariants :: [Move]
-                 }
+data Move = HalfMove { moveNumber      :: Int
+                     , moveColor       :: Color
+                     , moveDescription :: String
+                     , moveAnnotations :: [Annotation]
+                     , moveNext        :: Move
+                     , moveVariants    :: [Move]
+                     }
           | End ResultValue
           | VariantEnd
            deriving (Show)
 
-data Ply = Ply { plyDescription :: String
-               , plyAnnotations :: [Annotation]
-               } deriving (Show)
-
-hasAnnotations :: Ply -> Bool
-hasAnnotations (Ply _ []) = False
-hasAnnotations _          = True
-
 data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
+type Annotations = [Annotation]
 newtype Glyph = Glyph Int deriving (Show)
 type Comment = String
 
@@ -108,7 +100,7 @@ parseFirstMove :: Parser Move
 parseFirstMove = spaces *> parseMove 0 <* spaces <* eof
 
 parseMove :: Int -> Parser Move
-parseMove m = eithers [parseVariantEnd, parseResult] (parsePieceMove m)
+parseMove m = eithers [parseVariantEnd, parseResult] (parseHalfMove m)
 
 parseResult :: Parser (Maybe Move)
 parseResult = (fmap (End . readResultValue)) <$> optionMaybe parseResultValue
@@ -121,33 +113,31 @@ parseResult = (fmap (End . readResultValue)) <$> optionMaybe parseResultValue
 parseVariantEnd :: Parser (Maybe Move)
 parseVariantEnd = optionMaybe (VariantEnd <$ try (spaces *> char ')'))
 
-parsePieceMove :: Int -> Parser Move
-parsePieceMove previousNumber = do
-  number   <- spaces *> parseMoveNumber previousNumber
-  ply      <- parsePly
-  variants <- parseVariants number
-  parseContinuation number <* spaces
-  next     <- parseMove number
-  return $ Move { moveNumber   = number
-                , moveColor    = chooseColor (number > previousNumber)
-                , movePly      = ply
-                , moveNext     = next
-                , moveVariants = variants
-                }
+parseHalfMove :: Int -> Parser Move
+parseHalfMove previousNumber = do
+  number      <- spaces *> parseMoveNumber previousNumber
+  description <- parsePlyDescription
+  annotations <- parseAnnotations
+  variants    <- parseVariants number
+  next        <- parseContinuation number *> spaces *> parseMove number
+  return $ HalfMove { moveNumber      = number
+                    , moveColor       = chooseColor (number > previousNumber)
+                    , moveDescription = description
+                    , moveAnnotations = annotations
+                    , moveNext        = next
+                    , moveVariants    = variants
+                    }
 
 chooseColor :: Bool -> Color
 chooseColor True  = White
 chooseColor False = Black
 
-parsePly :: Parser Ply
-parsePly = do
-  description <- parsePlyDescription
-  glyph1      <- optionMaybe parseLitteralGlyph <* spaces
-  glyph2      <- optionMaybe parseGlyph <* spaces
-  comments    <- parseComments
-  return $ Ply { plyDescription = description
-               , plyAnnotations = mkAnnotations (glyph1 A.<|> glyph2) comments
-               }
+parseAnnotations :: Parser Annotations
+parseAnnotations = do
+  litteral <- optionMaybe parseLitteralGlyph <* spaces
+  nag      <- optionMaybe parseGlyph <* spaces
+  comments <- parseComments
+  return $ mkAnnotations (litteral A.<|> nag) comments
 
 parsePlyDescription :: Parser String
 parsePlyDescription = many1 (oneOf "abcdefgh12345678NBRQKx+#=O-")
