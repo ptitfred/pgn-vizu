@@ -58,10 +58,32 @@ showFilePath f = do
 printMatch :: Match -> IO ()
 printMatch m = do
   putStrLn "Headers:"
-  mapM_ (indented 1) $ matchHeaders m
+  printHeaders $ matchHeaders m
   putStrLn ""
   putStr "Moves:"
   printMove $ matchMoves m
+
+printHeaders :: Headers -> IO ()
+printHeaders = mapM_ printHeader
+
+printHeader :: Header -> IO ()
+printHeader (Event e)         = putStrLn $ " Event:        " ++ e
+printHeader (Site s)          = putStrLn $ " Site:         " ++ s
+printHeader (Date d)          = putStrLn $ " Date:         " ++ d
+printHeader (Round r)         = putStrLn $ " Round:        " ++ r
+printHeader (WhitePlayer wp)  = putStrLn $ " White:        " ++ wp
+printHeader (BlackPlayer bp)  = putStrLn $ " Black:        " ++ bp
+printHeader (Result rv)       = putStrLn $ " Result:       " ++ showResultValue rv
+printHeader (WhiteElo elo)    = putStrLn $ " White Elo:    " ++ show elo
+printHeader (BlackElo elo)    = putStrLn $ " Black Elo:    " ++ show elo
+printHeader (PlyCount plies)  = putStrLn $ " Ply count:    " ++ show plies
+printHeader (Variant v)       = putStrLn $ " Variant:      " ++ v
+printHeader (TimeControl tc)  = putStrLn $ " Time control: " ++ tc
+printHeader (ECO eco)         = putStrLn $ " ECO:          " ++ eco
+printHeader (Opening opening) = putStrLn $ " Opening:      " ++ opening
+printHeader (Termination t)   = putStrLn $ " Termination:  " ++ t
+printHeader (Annotator an)    = putStrLn $ " Annotator:    " ++ an
+printHeader (Other k v)       = putStrLn $ " " ++ k ++ ":  " ++ v
 
 printMove :: Move -> IO ()
 printMove VariantEnd = return ()
@@ -96,10 +118,13 @@ printVariants [_] = putStr " 1 variant"
 printVariants vs  = putStr $ " " ++ (show $ length vs) ++ " variants"
 
 printResult :: ResultValue -> IO ()
-printResult WhiteWins = putStrLn "white wins"
-printResult BlackWins = putStrLn "black wins"
-printResult Draw      = putStrLn "draw"
-printResult _         = putStrLn "uncertain"
+printResult = putStrLn . showResultValue
+
+showResultValue :: ResultValue -> String
+showResultValue WhiteWins = "white wins"
+showResultValue BlackWins = "black wins"
+showResultValue Draw      = "draw"
+showResultValue _         = "uncertain"
 
 printMoveNumber :: Int -> IO ()
 printMoveNumber n = putStr $ lpad 4 (show n ++ ". ")

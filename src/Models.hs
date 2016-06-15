@@ -9,6 +9,7 @@ module Models
     , File
     , Glyph(..)
     , Header(..)
+    , Headers
     , Match(..)
     , Move(..)
     , Piece(..)
@@ -22,9 +23,9 @@ module Models
     , readResultValue
     ) where
 
-data Match = Match { matchHeaders :: [Header]
+data Match = Match { matchHeaders :: Headers
                    , matchMoves   :: Move
-                   } deriving (Show)
+                   }
 
 data Header = Event String
             | Site String
@@ -43,9 +44,9 @@ data Header = Event String
             | Termination String
             | Annotator String
             | Other String String
-              deriving (Show)
+type Headers = [Header]
 
-data Color = White | Black deriving (Show)
+data Color = White | Black
 
 data Move = HalfMove { moveNumber      :: Int
                      , moveColor       :: Color
@@ -57,7 +58,6 @@ data Move = HalfMove { moveNumber      :: Int
                      }
           | End ResultValue
           | VariantEnd
-           deriving (Show)
 
 data PieceMove = ShortCastle
                | LongCastle
@@ -67,9 +67,8 @@ data PieceMove = ShortCastle
                           , pawnDestination :: Square
                           , pawnPromotion   :: Promotion
                           }
-                 deriving (Show)
 
-data Piece = Knight | Bishop | Rook | Queen | King deriving (Show)
+data Piece = Knight | Bishop | Rook | Queen | King
 type File = Char
 type Rank = Char
 type Square = (File, Rank)
@@ -77,19 +76,17 @@ data Disambiguate = FileDisambiguate File
                   | RankDisambiguate Rank
                   | SquareDisambiguate Square
                   | NoDisambiguate
-                    deriving (Show)
-data Capture = Capture | NoCapture deriving (Show)
+data Capture = Capture | NoCapture
 data Promotion = PromoteTo Piece
                | NoPromotion
-                 deriving Show
-data Check = None | Check | Mate deriving (Show)
+data Check = None | Check | Mate
 
-data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
+data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment
 type Annotations = [Annotation]
-newtype Glyph = Glyph Int deriving (Show)
+newtype Glyph = Glyph Int
 type Comment = String
 
-data ResultValue = WhiteWins | BlackWins | Draw | Unknown deriving (Show)
+data ResultValue = WhiteWins | BlackWins | Draw | Unknown
 
 mkAnnotations :: Maybe Glyph -> [Comment] -> Annotations
 mkAnnotations g cs = mkGlyphAnnotation g ++ mkCommentAnnotations cs
