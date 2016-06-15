@@ -1,53 +1,75 @@
 module Printer
-    ( printMatch
+    ( Locale(..)
+    , printMatch
     ) where
 
 import Models
 
-import Control.Monad (unless)
-import Data.List (intersperse)
+import Control.Monad          (unless)
+import Control.Monad.Reader   (ReaderT, runReaderT, asks)
+import Control.Monad.IO.Class (liftIO)
+import Data.List              (intersperse)
 
-printMatch :: Match -> IO ()
-printMatch m = do
-  putStrLn "Headers:"
+data Locale = English
+data Context = Context { locale :: Locale }
+
+type Printer = ReaderT Context IO
+
+printMatch :: Locale -> Match -> IO ()
+printMatch l m = runReaderT (matchPrinter m) (Context l)
+
+matchPrinter :: Match -> Printer ()
+matchPrinter m = do
+  localizedHeadersTitle <$> asks locale >>= putStrLnIO
   printHeaders $ matchHeaders m
-  putStrLn ""
-  putStr "Moves:"
+  putStrLnIO ""
+  localizedMovesTitle <$> asks locale >>= putStrIO
   printMove $ matchMoves m
 
-printHeaders :: Headers -> IO ()
+localizedHeadersTitle :: Locale -> String
+localizedHeadersTitle English = "Headers:"
+
+localizedMovesTitle :: Locale -> String
+localizedMovesTitle English = "Moves:"
+
+printHeaders :: Headers -> Printer ()
 printHeaders = mapM_ printHeader
 
-printHeader :: Header -> IO ()
-printHeader (Event e)         = putStrLn $ "  Event:        " ++ e
-printHeader (Site s)          = putStrLn $ "  Site:         " ++ s
-printHeader (Date d)          = putStrLn $ "  Date:         " ++ d
-printHeader (Round r)         = putStrLn $ "  Round:        " ++ r
-printHeader (WhitePlayer wp)  = putStrLn $ "  White:        " ++ wp
-printHeader (BlackPlayer bp)  = putStrLn $ "  Black:        " ++ bp
-printHeader (Result rv)       = putStrLn $ "  Result:       " ++ showResultValue rv
-printHeader (WhiteElo elo)    = putStrLn $ "  White Elo:    " ++ show elo
-printHeader (BlackElo elo)    = putStrLn $ "  Black Elo:    " ++ show elo
-printHeader (PlyCount plies)  = putStrLn $ "  Ply count:    " ++ show plies
-printHeader (Variant v)       = putStrLn $ "  Variant:      " ++ v
-printHeader (TimeControl tc)  = putStrLn $ "  Time control: " ++ tc
-printHeader (ECO eco)         = putStrLn $ "  ECO:          " ++ eco
-printHeader (Opening opening) = putStrLn $ "  Opening:      " ++ opening
-printHeader (Termination t)   = putStrLn $ "  Termination:  " ++ t
-printHeader (Annotator an)    = putStrLn $ "  Annotator:    " ++ an
-printHeader (Other k v)       = putStrLn $ "  " ++ k ++ ":  " ++ v
+printHeader :: Header -> Printer ()
+printHeader h = do
+  headerText <- showHeaderLocalized h <$> asks locale
+  putStrLnIO $ "  " ++ headerText
 
-printMove :: Move -> IO ()
+showHeaderLocalized :: Header -> Locale -> String
+showHeaderLocalized (Event e)        English = "Event:        " ++ e
+showHeaderLocalized (Site s)         English = "Site:         " ++ s
+showHeaderLocalized (Date d)         English = "Date:         " ++ d
+showHeaderLocalized (Round r)        English = "Round:        " ++ r
+showHeaderLocalized (WhitePlayer wp) English = "White:        " ++ wp
+showHeaderLocalized (BlackPlayer bp) English = "Black:        " ++ bp
+showHeaderLocalized (Result rv)      English = "Result:       " ++ showResultValue rv English
+showHeaderLocalized (WhiteElo elo)   English = "White Elo:    " ++ show elo
+showHeaderLocalized (BlackElo elo)   English = "Black Elo:    " ++ show elo
+showHeaderLocalized (PlyCount plies) English = "Ply count:    " ++ show plies
+showHeaderLocalized (Variant v)      English = "Variant:      " ++ v
+showHeaderLocalized (TimeControl tc) English = "Time control: " ++ tc
+showHeaderLocalized (ECO eco)        English = "ECO:          " ++ eco
+showHeaderLocalized (Opening opening)English = "Opening:      " ++ opening
+showHeaderLocalized (Termination t)  English = "Termination:  " ++ t
+showHeaderLocalized (Annotator an)   English = "Annotator:    " ++ an
+showHeaderLocalized (Other k v)      English = k ++ ":  " ++ v
+
+printMove :: Move -> Printer ()
 printMove VariantEnd = return ()
 printMove (End result) = do
-  putStrLn ""
-  putStr "      "
+  putStrLnIO ""
+  putStrIO "      "
   printResult result
 printMove (HalfMove n c pm ch as nx vs) = do
   case c of
     White -> do
-      putStrLn ""
-      putStr "  "
+      putStrLnIO ""
+      putStrIO "  "
       printMoveNumber n
     Black -> return ()
   printPieceMove pm
@@ -57,51 +79,60 @@ printMove (HalfMove n c pm ch as nx vs) = do
     printVariants vs
   case c of
     White -> if null as
-             then putStr " "
+             then putStrIO " "
              else do
-               putStrLn ""
-               putStr $ lpad (2 + 4 + 10 + 1 + 1) ""
+               putStrLnIO ""
+               putStrIO $ lpad (2 + 4 + 10 + 1 + 1) ""
     Black -> return ()
   printMove nx
 
-printVariants :: [Move] -> IO ()
+printVariants :: [Move] -> Printer ()
 printVariants []  = return ()
-printVariants [_] = putStr " 1 variant"
-printVariants vs  = putStr $ " " ++ (show $ length vs) ++ " variants"
+printVariants [_] = putStrIO " 1 variant"
+printVariants vs  = putStrIO $ " " ++ (show $ length vs) ++ " variants"
 
-printResult :: ResultValue -> IO ()
-printResult = putStrLn . showResultValue
+printResult :: ResultValue -> Printer ()
+printResult rv = showResultValue rv <$> asks locale >>= putStrLnIO
 
-showResultValue :: ResultValue -> String
-showResultValue WhiteWins = "white wins"
-showResultValue BlackWins = "black wins"
-showResultValue Draw      = "draw"
-showResultValue _         = "uncertain"
+showResultValue :: ResultValue -> Locale -> String
+showResultValue WhiteWins English = "white wins"
+showResultValue BlackWins English = "black wins"
+showResultValue Draw      English = "draw"
+showResultValue Unknown   English = "uncertain"
 
-printMoveNumber :: Int -> IO ()
-printMoveNumber n = putStr $ lpad 4 (show n ++ ". ")
+printMoveNumber :: Int -> Printer ()
+printMoveNumber n = putStrIO $ lpad 4 (show n ++ ". ")
 
-printPieceMove :: PieceMove -> IO ()
-printPieceMove pm = putStr (lpad 10 (text pm))
-  where text ShortCastle = "O-O"
-        text LongCastle  = "O-O-O"
-        text (PieceMove p d c s) = showPiece p ++ showDisambiguate d ++ showCapture c ++ showSquare s
-        text (PawnMove f c d p) = showFile f ++ showCapture c ++ showSquare d ++ showPromotion p
+printPieceMove :: PieceMove -> Printer ()
+printPieceMove ShortCastle         = printFormattedPieceMove "O-O"
+printPieceMove LongCastle          = printFormattedPieceMove "O-O-O"
+printPieceMove (PieceMove p d c s) = do
+  pieceText <- showPiece p
+  printFormattedPieceMove $ pieceText ++ showDisambiguate d ++ showCapture c ++ showSquare s
+printPieceMove (PawnMove f c d p)  = do
+  promotionText <- showPromotion p
+  printFormattedPieceMove $ showFile f ++ showCapture c ++ showSquare d ++ promotionText
+
+printFormattedPieceMove :: String -> Printer ()
+printFormattedPieceMove text = putStrIO (lpad 10 text)
 
 showFile :: Maybe File -> String
 showFile Nothing = ""
 showFile (Just f) = [f]
 
-showPiece :: Piece -> String
-showPiece Knight = "N"
-showPiece Bishop = "B"
-showPiece Rook   = "R"
-showPiece Queen  = "Q"
-showPiece King   = "K"
+showPiece :: Piece -> Printer String
+showPiece p = showPieceLocalized p <$> asks locale
 
-showPromotion :: Promotion -> String
-showPromotion (PromoteTo p) = "=" ++ showPiece p
-showPromotion  NoPromotion  = ""
+showPieceLocalized :: Piece -> Locale -> String
+showPieceLocalized Knight English = "N"
+showPieceLocalized Bishop English = "B"
+showPieceLocalized Rook   English = "R"
+showPieceLocalized Queen  English = "Q"
+showPieceLocalized King   English = "K"
+
+showPromotion :: Promotion -> Printer String
+showPromotion (PromoteTo p) = ("=" ++) <$> showPiece p
+showPromotion  NoPromotion  = return ""
 
 showCapture :: Capture -> String
 showCapture NoCapture = ""
@@ -116,23 +147,23 @@ showDisambiguate NoDisambiguate         = ""
 showSquare :: Square -> String
 showSquare (f,r) = [f,r]
 
-printCheck :: Check -> IO ()
-printCheck None  = putStr " "
-printCheck Check = putStr "+"
-printCheck Mate  = putStr "#"
+printCheck :: Check -> Printer ()
+printCheck None  = putStrIO " "
+printCheck Check = putStrIO "+"
+printCheck Mate  = putStrIO "#"
 
-printAnnotations :: Annotations -> IO ()
+printAnnotations :: Annotations -> Printer ()
 printAnnotations [] = return ()
 printAnnotations as = do
-  putStr " "
-  sequence_ $ intersperse (putStr " ") $ map printAnnotation as
+  putStrIO " "
+  sequence_ $ intersperse (putStrIO " ") $ map printAnnotation as
 
-printAnnotation :: Annotation -> IO ()
+printAnnotation :: Annotation -> Printer ()
 printAnnotation (GlyphAnnotation   g) = printGlyph g
 printAnnotation (CommentAnnotation c) = printComment c
 
-printGlyph :: Glyph -> IO ()
-printGlyph = putStr . showGlyph
+printGlyph :: Glyph -> Printer ()
+printGlyph = putStrIO . showGlyph
 
 showGlyph :: Glyph -> String
 showGlyph (Glyph  1) = "!"
@@ -145,8 +176,13 @@ showGlyph (Glyph 18) = "+/-"
 showGlyph (Glyph 19) = "-/+"
 showGlyph (Glyph  v) = "$" ++ show v
 
-printComment :: Comment -> IO ()
-printComment c = putStr $ "« " ++ c ++ " »"
+printComment :: Comment -> Printer ()
+printComment c = do
+  text <- showLocalizedComment c <$> asks locale
+  putStrIO text
+
+showLocalizedComment :: Comment -> Locale -> String
+showLocalizedComment c English = "\"" ++ c ++ "\""
 
 {- Utilities -}
 
@@ -156,3 +192,9 @@ lpad l s | l < 0     = error "padding size must be >= 0"
   where l' = l - length s'
         s' = take l s
         pad = replicate l' ' '
+
+putStrLnIO :: String -> Printer ()
+putStrLnIO = liftIO . putStrLn
+
+putStrIO :: String -> Printer ()
+putStrIO = liftIO . putStr
