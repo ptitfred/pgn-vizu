@@ -3,6 +3,13 @@ module PGN
     , Move(..)
     , Color(..)
     , PieceMove(..)
+    , Piece(..)
+    , Capture(..)
+    , Disambiguate(..)
+    , Square
+    , File
+    , Rank
+    , Promotion(..)
     , Check(..)
     , Glyph(..)
     , Annotation(..)
@@ -10,7 +17,7 @@ module PGN
     , Header(..)
     , ParseError
     , ResultValue(..)
-    , parseFile
+    , parseFilePath
     ) where
 
 import qualified Control.Applicative as A ((<|>))
@@ -18,8 +25,8 @@ import Data.Maybe (fromJust, isJust, fromMaybe)
 import Text.Parsec
 import Text.Parsec.ByteString (Parser, parseFromFile)
 
-parseFile :: FilePath -> IO (Either ParseError Match)
-parseFile file = parseFromFile parseMatch file
+parseFilePath :: FilePath -> IO (Either ParseError Match)
+parseFilePath file = parseFromFile parseMatch file
 
 data Match = Match { matchHeaders :: [Header]
                    , matchMoves   :: Move
@@ -58,7 +65,26 @@ data Move = HalfMove { moveNumber      :: Int
           | VariantEnd
            deriving (Show)
 
-newtype PieceMove = PieceMove String deriving (Show)
+data PieceMove = ShortCastle
+               | LongCastle
+               | PieceMove Piece Disambiguate Capture Square
+               | PawnMove { pawnStartFile   :: (Maybe File)
+                          , pawnCapture     :: Capture
+                          , pawnDestination :: Square
+                          , pawnPromotion   :: Promotion
+                          }
+                 deriving (Show)
+
+data Piece = Knight | Bishop | Rook | Queen | King deriving (Show)
+type File = Char
+type Rank = Char
+type Square = (File, Rank)
+data Disambiguate = FileDisambiguate File
+                  | RankDisambiguate Rank
+                  | SquareDisambiguate Square
+                  | NoDisambiguate
+                    deriving (Show)
+data Capture = Capture | NoCapture deriving (Show)
 data Check = None | Check | Mate deriving (Show)
 
 data Annotation = GlyphAnnotation Glyph | CommentAnnotation Comment deriving (Show)
@@ -148,10 +174,79 @@ parseAnnotations = do
   return $ mkAnnotations (litteral A.<|> nag) comments
 
 parsePieceMove :: Parser PieceMove
-parsePieceMove = PieceMove <$> tries [ string "O-O-O"
-                                     , string "O-O"
-                                     , many1 (oneOf "abcdefgh12345678NBRQKx=")
-                                     ]
+parsePieceMove = tries [ longCastle
+                       , shortCastle
+                       , pieceMove
+                       , pawnMove
+                       ]
+  where longCastle  = LongCastle  <$ string "O-O-O"
+        shortCastle = ShortCastle <$ string "O-O"
+        pieceMove =
+          tries [ PieceMove <$> parsePiece
+                            <*> parseDisambiguate
+                            <*> parseCapture
+                            <*> parseSquare
+                , PieceMove <$> parsePiece
+                            <*> return NoDisambiguate
+                            <*> parseCapture
+                            <*> parseSquare
+                , PieceMove <$> parsePiece
+                            <*> parseDisambiguate
+                            <*> return NoCapture
+                            <*> parseSquare
+                , PieceMove <$> parsePiece
+                            <*> return NoDisambiguate
+                            <*> return NoCapture
+                            <*> parseSquare
+                ]
+        pawnMove =
+          tries [ PawnMove <$> (Just <$> parseFile)
+                           <*> parseCapture
+                           <*> parseSquare
+                           <*> parsePromotion
+                , PawnMove <$> return Nothing
+                           <*> return NoCapture
+                           <*> parseSquare
+                           <*> parsePromotion
+                ]
+
+parsePiece :: Parser Piece
+parsePiece = tries [ Knight <$ char 'N'
+                   , Bishop <$ char 'B'
+                   , Rook   <$ char 'R'
+                   , Queen  <$ char 'Q'
+                   , King   <$ char 'K'
+                   ]
+
+parseDisambiguate :: Parser Disambiguate
+parseDisambiguate = triesOr [ SquareDisambiguate <$> parseSquare
+                            , FileDisambiguate   <$> parseFile
+                            , RankDisambiguate   <$> parseRank
+                            ] NoDisambiguate
+
+parseSquare :: Parser (File, Rank)
+parseSquare = (,) <$> parseFile <*> parseRank
+
+parseFile :: Parser File
+parseFile = oneOf "abcdefgh"
+
+parseRank :: Parser Rank
+parseRank = oneOf "12345678"
+
+parseCapture :: Parser Capture
+parseCapture = triesOr [ Capture <$ char 'x'
+                       ] NoCapture
+
+data Promotion = PromoteTo Piece
+               | NoPromotion
+                 deriving Show
+
+parsePromotion :: Parser Promotion
+parsePromotion = triesOr [ (PromoteTo Queen ) <$ string "=Q"
+                         , (PromoteTo Rook  ) <$ string "=R"
+                         , (PromoteTo Bishop) <$ string "=B"
+                         , (PromoteTo Knight) <$ string "=N"
+                         ] NoPromotion
 
 parseCheck :: Parser Check
 parseCheck = triesOr [ Check <$ char '+'
@@ -232,4 +327,4 @@ tries :: [Parser a] -> Parser a
 tries = choice . map try
 
 triesOr :: [Parser a] -> a -> Parser a
-triesOr alternatives defaultValue = tries alternatives <|> return defaultValue
+triesOr alternatives defaultValue = option defaultValue (tries alternatives)
