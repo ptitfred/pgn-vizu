@@ -10,7 +10,7 @@ import Control.Monad.Reader   (ReaderT, runReaderT, asks)
 import Control.Monad.IO.Class (liftIO)
 import Data.List              (intersperse)
 
-data Locale = English
+data Locale = English | French
 data Context = Context { locale :: Locale }
 
 type Printer = ReaderT Context IO
@@ -28,9 +28,11 @@ matchPrinter m = do
 
 localizedHeadersTitle :: Locale -> String
 localizedHeadersTitle English = "Headers:"
+localizedHeadersTitle French  = "En-têtes :"
 
 localizedMovesTitle :: Locale -> String
 localizedMovesTitle English = "Moves:"
+localizedMovesTitle French  = "Coups :"
 
 printHeaders :: Headers -> Printer ()
 printHeaders = mapM_ printHeader
@@ -58,6 +60,23 @@ showHeaderLocalized (Opening opening)English = "Opening:      " ++ opening
 showHeaderLocalized (Termination t)  English = "Termination:  " ++ t
 showHeaderLocalized (Annotator an)   English = "Annotator:    " ++ an
 showHeaderLocalized (Other k v)      English = k ++ ":  " ++ v
+showHeaderLocalized (Event e)        French  = "Évènement :       " ++ e
+showHeaderLocalized (Site s)         French  = "Site :            " ++ s
+showHeaderLocalized (Date d)         French  = "Date :            " ++ d
+showHeaderLocalized (Round r)        French  = "Ronde :           " ++ r
+showHeaderLocalized (WhitePlayer wp) French  = "Blancs :          " ++ wp
+showHeaderLocalized (BlackPlayer bp) French  = "Noirs :           " ++ bp
+showHeaderLocalized (Result rv)      French  = "Résultat :        " ++ showResultValue rv French
+showHeaderLocalized (WhiteElo elo)   French  = "Elo blancs :      " ++ show elo
+showHeaderLocalized (BlackElo elo)   French  = "Elo noirs :       " ++ show elo
+showHeaderLocalized (PlyCount plies) French  = "Nombre de coups : " ++ show plies
+showHeaderLocalized (Variant v)      French  = "Variante :        " ++ v
+showHeaderLocalized (TimeControl tc) French  = "Horloge :         " ++ tc
+showHeaderLocalized (ECO eco)        French  = "ECO :             " ++ eco
+showHeaderLocalized (Opening opening)French  = "Ouverture :       " ++ opening
+showHeaderLocalized (Termination t)  French  = "Terminaison :     " ++ t
+showHeaderLocalized (Annotator an)   French  = "Annoteur :        " ++ an
+showHeaderLocalized (Other k v)      French  = k ++ " :  " ++ v
 
 printMove :: Move -> Printer ()
 printMove VariantEnd = return ()
@@ -99,6 +118,10 @@ showResultValue WhiteWins English = "white wins"
 showResultValue BlackWins English = "black wins"
 showResultValue Draw      English = "draw"
 showResultValue Unknown   English = "uncertain"
+showResultValue WhiteWins French  = "les blancs l'emportent"
+showResultValue BlackWins French  = "les noirs l'emportent"
+showResultValue Draw      French  = "nulle"
+showResultValue Unknown   French  = "résultat incertain"
 
 printMoveNumber :: Int -> Printer ()
 printMoveNumber n = putStrIO $ lpad 4 (show n ++ ". ")
@@ -129,6 +152,11 @@ showPieceLocalized Bishop English = "B"
 showPieceLocalized Rook   English = "R"
 showPieceLocalized Queen  English = "Q"
 showPieceLocalized King   English = "K"
+showPieceLocalized Knight French  = "C"
+showPieceLocalized Bishop French  = "F"
+showPieceLocalized Rook   French  = "T"
+showPieceLocalized Queen  French  = "D"
+showPieceLocalized King   French  = "R"
 
 showPromotion :: Promotion -> Printer String
 showPromotion (PromoteTo p) = ("=" ++) <$> showPiece p
@@ -183,6 +211,7 @@ printComment c = do
 
 showLocalizedComment :: Comment -> Locale -> String
 showLocalizedComment c English = "\"" ++ c ++ "\""
+showLocalizedComment c French  = "« " ++ c ++ " »"
 
 {- Utilities -}
 

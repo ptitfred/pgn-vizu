@@ -21,6 +21,7 @@ getLocale = do
   lang <- lookupEnv "LANG"
   let locale = fromMaybe "en" $ messages <|> lang
   case (take 2 locale) of
+    "fr" -> return French
     _    -> return English
 
 dispatch :: Locale -> [String] -> IO ()
@@ -34,6 +35,7 @@ dispatch locale []                = help locale
 
 unknown :: Locale -> String -> IO ()
 unknown English a = putStrLn $ "Unknown action " ++ a
+unknown French  a = putStrLn $ "Action " ++ a ++ " inconnue"
 
 delimiter :: IO ()
 delimiter = putStrLn ""
@@ -53,6 +55,13 @@ help English = do
   putStrLn " check files* : attempt to parse PGN files"
   putStrLn ""
   putStrLn " help         : this message"
+help French = do
+  putStrLn "Commandes:"
+  putStrLn " show fichiers*  : affiche le contenu des fichiers PGN"
+  putStrLn ""
+  putStrLn " check fichiers* : essaie de lire les fichiers PGN"
+  putStrLn ""
+  putStrLn " help            : ce message"
 
 checkFile :: String -> IO Bool
 checkFile file = do
