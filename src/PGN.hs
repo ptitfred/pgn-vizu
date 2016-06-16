@@ -28,12 +28,11 @@ parseMove :: Int -> Parser Move
 parseMove m = eithers [parseVariantEnd, parseResult] (parseHalfMove m)
 
 parseResult :: Parser (Maybe Move)
-parseResult = (fmap (End . readResultValue)) <$> optionMaybe parseResultValue
-  where parseResultValue = tries [ string "1/2-1/2"
-                                 , string "1-0"
-                                 , string "0-1"
-                                 , string "*"
-                                 ]
+parseResult = optionMaybe $ tries [ End Draw      <$ string "1/2-1/2"
+                                  , End WhiteWins <$ string "1-0"
+                                  , End BlackWins <$ string "0-1"
+                                  , End Unknown   <$ string "*"
+                                  ]
 
 parseVariantEnd :: Parser (Maybe Move)
 parseVariantEnd = optionMaybe (VariantEnd <$ try (spaces *> char ')'))

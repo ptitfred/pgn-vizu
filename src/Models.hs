@@ -20,7 +20,6 @@ module Models
     , Square
     , mkAnnotations
     , readHeader
-    , readResultValue
     ) where
 
 data Match = Match { matchHeaders :: Headers
