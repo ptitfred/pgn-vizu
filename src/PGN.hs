@@ -6,14 +6,13 @@ module PGN
 import Models
 
 import qualified Control.Applicative as A ((<|>))
-import           Data.Maybe               (fromJust, isJust, fromMaybe)
 import           Data.Text.IO             (readFile)
 import           Prelude                  hiding (readFile)
 import           Text.Parsec
 import           Text.Parsec.Text         (Parser)
 
 parseFilePath :: FilePath -> IO (Either ParseError Match)
-parseFilePath file = parseFromFile parseMatch file
+parseFilePath = parseFromFile parseMatch
 
 parseFromFile :: Parser a -> FilePath -> IO (Either ParseError a)
 parseFromFile parser file = parse parser file <$> readFile file
@@ -45,14 +44,14 @@ parseHalfMove previousNumber = do
   annotations <- parseAnnotations
   variants    <- parseVariants number
   next        <- parseContinuation number *> spaces *> parseMove number
-  return $ HalfMove { moveNumber      = number
-                    , moveColor       = chooseColor (number > previousNumber)
-                    , moveAction      = action
-                    , moveCheck       = check
-                    , moveAnnotations = annotations
-                    , moveNext        = next
-                    , moveVariants    = variants
-                    }
+  return HalfMove { moveNumber      = number
+                  , moveColor       = chooseColor (number > previousNumber)
+                  , moveAction      = action
+                  , moveCheck       = check
+                  , moveAnnotations = annotations
+                  , moveNext        = next
+                  , moveVariants    = variants
+                  }
 
 chooseColor :: Bool -> Color
 chooseColor True  = White
@@ -148,10 +147,10 @@ parseCapture = triesOr [ CaptureFromFile <$> parseFile <* char 'x'
                        ] NoCapture
 
 parsePromotion :: Parser Promotion
-parsePromotion = triesOr [ (PromoteTo Queen ) <$ string "=Q"
-                         , (PromoteTo Rook  ) <$ string "=R"
-                         , (PromoteTo Bishop) <$ string "=B"
-                         , (PromoteTo Knight) <$ string "=N"
+parsePromotion = triesOr [ PromoteTo Queen  <$ string "=Q"
+                         , PromoteTo Rook   <$ string "=R"
+                         , PromoteTo Bishop <$ string "=B"
+                         , PromoteTo Knight <$ string "=N"
                          ] NoPromotion
 
 parseCheck :: Parser Check
@@ -198,15 +197,15 @@ parseComment :: Parser Comment
 parseComment = char '{' *> spaces *> manyTill anyChar (try (spaces >> char '}'))
 
 parseMoveNumber :: Int -> Parser Int
-parseMoveNumber m = (fromMaybe m . fmap read) <$> optionMaybe (try (many1 digit <* char '.' <* spaces))
+parseMoveNumber m = maybe m read <$> optionMaybe (try (many1 digit <* char '.' <* spaces))
 
 parseHeaders :: Parser [Header]
 parseHeaders = many parseHeader <* newline
 
-parseHeader :: Parser (Header)
+parseHeader :: Parser Header
 parseHeader = char '[' *> parseHeaderContent <* char ']' <* newline
 
-parseHeaderContent :: Parser (Header)
+parseHeaderContent :: Parser Header
 parseHeaderContent = readHeader <$> parseHeaderName <* spaces <*> parseHeaderValue
 
 parseHeaderName :: Parser String
@@ -218,16 +217,12 @@ parseHeaderValue = textBetween '"' '"'
 {- Utilities -}
 
 textBetween :: Char -> Char -> Parser String
-textBetween c1 c2 = between (char c1) (char c2) (content)
+textBetween c1 c2 = between (char c1) (char c2) content
   where content = many (noneOf [c2])
 
 eithers :: [Parser (Maybe a)] -> Parser a -> Parser a
-eithers [] main = main
-eithers (alt:alts) main = do
-  v <- alt
-  if isJust v
-  then return $ fromJust v
-  else eithers alts main
+eithers []         main = main
+eithers (alt:alts) main = alt >>= maybe (eithers alts main) return
 
 tries :: [Parser a] -> Parser a
 tries = choice . map try
