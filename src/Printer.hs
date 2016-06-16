@@ -126,22 +126,18 @@ showResultValue Unknown   French  = "résultat incertain"
 printMoveNumber :: Int -> Printer ()
 printMoveNumber n = putStrIO $ lpad 4 (show n ++ ". ")
 
-printPieceMove :: PieceMove -> Printer ()
+printPieceMove :: Action -> Printer ()
 printPieceMove ShortCastle         = printFormattedPieceMove "O-O"
 printPieceMove LongCastle          = printFormattedPieceMove "O-O-O"
 printPieceMove (PieceMove p d c s) = do
   pieceText <- showPiece p
   printFormattedPieceMove $ pieceText ++ showDisambiguate d ++ showCapture c ++ showSquare s
-printPieceMove (PawnMove f c d p)  = do
+printPieceMove (PawnMove c d p)  = do
   promotionText <- showPromotion p
-  printFormattedPieceMove $ showFile f ++ showCapture c ++ showSquare d ++ promotionText
+  printFormattedPieceMove $ showCapture c ++ showSquare d ++ promotionText
 
 printFormattedPieceMove :: String -> Printer ()
 printFormattedPieceMove text = putStrIO (lpad 10 text)
-
-showFile :: Maybe File -> String
-showFile Nothing = ""
-showFile (Just f) = [f]
 
 showPiece :: Piece -> Printer String
 showPiece p = showPieceLocalized p <$> asks locale
@@ -163,14 +159,21 @@ showPromotion (PromoteTo p) = ("=" ++) <$> showPiece p
 showPromotion  NoPromotion  = return ""
 
 showCapture :: Capture -> String
-showCapture NoCapture = ""
-showCapture Capture   = "x"
+showCapture  Capture            = "x"
+showCapture (CaptureFromFile f) = showFile f ++ "x"
+showCapture  NoCapture          = ""
 
 showDisambiguate :: Disambiguate -> String
-showDisambiguate (FileDisambiguate f)   = [f]
-showDisambiguate (RankDisambiguate r)   = [r]
+showDisambiguate (FileDisambiguate f)   = showFile f
+showDisambiguate (RankDisambiguate r)   = showRank r
 showDisambiguate (SquareDisambiguate s) = showSquare s
-showDisambiguate NoDisambiguate         = ""
+showDisambiguate  NoDisambiguate        = ""
+
+showFile :: File -> String
+showFile f = [f]
+
+showRank :: Rank -> String
+showRank r = [r]
 
 showSquare :: Square -> String
 showSquare (f,r) = [f,r]
