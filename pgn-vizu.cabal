@@ -20,7 +20,7 @@ library
                      , Printer
   ghc-options:         -Wall -Werror
   build-depends:       base >= 4.7 && < 5
-                     , bytestring
+                     , text
                      , parsec
                      , mtl
                      , transformers
