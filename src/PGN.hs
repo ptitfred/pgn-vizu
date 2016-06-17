@@ -6,12 +6,17 @@ module PGN
 import Models
 
 import qualified Control.Applicative as A ((<|>))
-import Data.Maybe (fromJust, isJust, fromMaybe)
-import Text.Parsec
-import Text.Parsec.ByteString (Parser, parseFromFile)
+import           Data.Maybe               (fromJust, isJust, fromMaybe)
+import           Data.Text.IO             (readFile)
+import           Prelude                  hiding (readFile)
+import           Text.Parsec
+import           Text.Parsec.Text         (Parser)
 
 parseFilePath :: FilePath -> IO (Either ParseError Match)
 parseFilePath file = parseFromFile parseMatch file
+
+parseFromFile :: Parser a -> FilePath -> IO (Either ParseError a)
+parseFromFile parser file = parse parser file <$> readFile file
 
 parseMatch :: Parser Match
 parseMatch = Match <$> parseHeaders <*> parseFirstMove
