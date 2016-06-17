@@ -69,11 +69,11 @@ exit 0 = exitSuccess
 exit n = exitWith (ExitFailure n)
 
 showFiles :: Locale -> [FilePath] -> IO ()
-showFiles locale = mapNlM_ (showFile locale)
+showFiles locale = mapLnM_ (showFile locale)
 
 showFile :: Locale -> FilePath -> IO ()
 showFile locale file = parseFilePath file >>= either print printMatches
-  where printMatches = mapNlM_ (printMatch locale)
+  where printMatches = mapLnM_ (printMatch locale)
 
 unknown :: Locale -> String -> IO ()
 unknown English = printfLn "Unknown action '%s'"
@@ -95,8 +95,8 @@ chooseLocale locale =
     _    -> English
   where shortLocale = take 2 locale
 
-mapNlM_ :: (a -> IO ()) -> [a] -> IO ()
-mapNlM_ action = sequence_ . intersperse newline . map action
+mapLnM_ :: (a -> IO ()) -> [a] -> IO ()
+mapLnM_ action = sequence_ . intersperse newline . map action
 
 newline :: IO ()
 newline = putStrLn ""
