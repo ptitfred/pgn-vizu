@@ -94,8 +94,7 @@ printMove (HalfMove n c pm ch as nx vs) = do
   printPieceMove pm
   printCheck ch
   printAnnotations as
-  unless (null vs) $ do
-    printVariants vs
+  unless (null vs) $ printVariants vs
   case c of
     White -> if null as
              then putStrIO " "
@@ -108,7 +107,7 @@ printMove (HalfMove n c pm ch as nx vs) = do
 printVariants :: [Move] -> Printer ()
 printVariants []  = return ()
 printVariants [_] = putStrIO " 1 variant"
-printVariants vs  = putStrIO $ " " ++ (show $ length vs) ++ " variants"
+printVariants vs  = putStrIO $ " " ++ show (length vs) ++ " variants"
 
 printResult :: ResultValue -> Printer ()
 printResult rv = showResultValue rv <$> asks locale >>= putStrLnIO
