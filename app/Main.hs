@@ -8,6 +8,7 @@ import Data.List           (intersperse)
 import Data.Maybe          (fromMaybe)
 import System.Environment  (getArgs, lookupEnv)
 import System.Exit         (ExitCode(..), exitSuccess, exitWith)
+import Text.Printf         (PrintfType, printf)
 
 main :: IO ()
 main = do
@@ -47,10 +48,10 @@ checkFile :: String -> IO Bool
 checkFile file = do
   r <- parseFilePath file
   case r of
-    Right _ -> True  <$ putStrLn (file ++ " OK")
-    Left  e -> False <$ putStrLn (file ++ " KO") <* putStr (asMessage e)
+    Right _ -> True  <$ printfLn "%s OK" file
+    Left  e -> False <$ printfLn "%s KO" file <* putStr (asMessage e)
     where asMessage = indent . show
-          indent    = unlines . map ("  "++) . lines
+          indent    = unlines . map (printf "  %s") . lines
 
 sumUpChecks :: [Bool] -> IO ()
 sumUpChecks = exit . length . filter not
@@ -72,8 +73,8 @@ showFile locale file = do
     Left  parseError -> print parseError
 
 unknown :: Locale -> String -> IO ()
-unknown English a = putStrLn $ "Unknown action " ++ a
-unknown French  a = putStrLn $ "Action " ++ a ++ " inconnue"
+unknown English = printfLn "Unknown action '%s'"
+unknown French  = printfLn "Action '%s' inconnue"
 
 getLocale :: IO Locale
 getLocale = chooseLocale <$> getEnvs "en" ["LC_MESSAGES", "LANG"]
@@ -93,3 +94,6 @@ chooseLocale locale =
 
 newline :: IO ()
 newline = putStrLn ""
+
+printfLn :: PrintfType r => String -> r
+printfLn p = printf (p ++ "\n")
