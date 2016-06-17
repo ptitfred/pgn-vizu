@@ -41,14 +41,14 @@ parseVariantEnd = optionMaybe (VariantEnd <$ try (spaces *> char ')'))
 parseHalfMove :: Int -> Parser Move
 parseHalfMove previousNumber = do
   number      <- spaces *> parseMoveNumber previousNumber
-  pieceMove   <- parsePieceMove
+  action      <- parseAction
   check       <- parseCheck
   annotations <- parseAnnotations
   variants    <- parseVariants number
   next        <- parseContinuation number *> spaces *> parseMove number
   return $ HalfMove { moveNumber      = number
                     , moveColor       = chooseColor (number > previousNumber)
-                    , movePieceMove   = pieceMove
+                    , moveAction      = action
                     , moveCheck       = check
                     , moveAnnotations = annotations
                     , moveNext        = next
@@ -66,42 +66,59 @@ parseAnnotations = do
   comments <- parseComments
   return $ mkAnnotations (litteral A.<|> nag) comments
 
-parsePieceMove :: Parser PieceMove
-parsePieceMove = tries [ longCastle
-                       , shortCastle
-                       , pieceMove
-                       , pawnMove
+parseAction :: Parser Action
+parseAction = tries [ parseLongCastle
+                    , parseShortCastle
+                    , parsePieceMove
+                    , parsePawnMove
+                    ]
+
+parseLongCastle :: Parser Action
+parseLongCastle = LongCastle <$ string "O-O-O"
+
+parseShortCastle :: Parser Action
+parseShortCastle = ShortCastle  <$ string "O-O"
+
+parsePawnMove :: Parser Action
+parsePawnMove =
+  PawnMove <$> parseCapture
+           <*> parseSquare
+           <*> parsePromotion
+
+parsePieceMove :: Parser Action
+parsePieceMove = tries [ parseAmbiguousPieceMoveWithCapture
+                       , parsePieceMoveWithCapture
+                       , parseAmbiguousPieceMove
+                       , parseSimplePieceMove
                        ]
-  where longCastle  = LongCastle  <$ string "O-O-O"
-        shortCastle = ShortCastle <$ string "O-O"
-        pieceMove =
-          tries [ PieceMove <$> parsePiece
-                            <*> parseDisambiguate
-                            <*> parseCapture
-                            <*> parseSquare
-                , PieceMove <$> parsePiece
-                            <*> return NoDisambiguate
-                            <*> parseCapture
-                            <*> parseSquare
-                , PieceMove <$> parsePiece
-                            <*> parseDisambiguate
-                            <*> return NoCapture
-                            <*> parseSquare
-                , PieceMove <$> parsePiece
-                            <*> return NoDisambiguate
-                            <*> return NoCapture
-                            <*> parseSquare
-                ]
-        pawnMove =
-          tries [ PawnMove <$> (Just <$> parseFile)
-                           <*> parseCapture
-                           <*> parseSquare
-                           <*> parsePromotion
-                , PawnMove <$> return Nothing
-                           <*> return NoCapture
-                           <*> parseSquare
-                           <*> parsePromotion
-                ]
+
+parseAmbiguousPieceMoveWithCapture :: Parser Action
+parseAmbiguousPieceMoveWithCapture =
+  PieceMove <$> parsePiece
+            <*> parseDisambiguate
+            <*> parseCapture
+            <*> parseSquare
+
+parsePieceMoveWithCapture :: Parser Action
+parsePieceMoveWithCapture =
+  PieceMove <$> parsePiece
+            <*> return NoDisambiguate
+            <*> parseCapture
+            <*> parseSquare
+
+parseAmbiguousPieceMove :: Parser Action
+parseAmbiguousPieceMove =
+  PieceMove <$> parsePiece
+            <*> parseDisambiguate
+            <*> return NoCapture
+            <*> parseSquare
+
+parseSimplePieceMove :: Parser Action
+parseSimplePieceMove =
+  PieceMove <$> parsePiece
+            <*> return NoDisambiguate
+            <*> return NoCapture
+            <*> parseSquare
 
 parsePiece :: Parser Piece
 parsePiece = tries [ Knight <$ char 'N'
@@ -127,7 +144,8 @@ parseRank :: Parser Rank
 parseRank = oneOf "12345678"
 
 parseCapture :: Parser Capture
-parseCapture = triesOr [ Capture <$ char 'x'
+parseCapture = triesOr [ CaptureFromFile <$> parseFile <* char 'x'
+                       , Capture                       <$ char 'x'
                        ] NoCapture
 
 parsePromotion :: Parser Promotion

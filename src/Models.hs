@@ -13,7 +13,7 @@ module Models
     , Match(..)
     , Move(..)
     , Piece(..)
-    , PieceMove(..)
+    , Action(..)
     , Promotion(..)
     , Rank
     , ResultValue(..)
@@ -50,7 +50,7 @@ data Color = White | Black
 
 data Move = HalfMove { moveNumber      :: Int
                      , moveColor       :: Color
-                     , movePieceMove   :: PieceMove
+                     , moveAction      :: Action
                      , moveCheck       :: Check
                      , moveAnnotations :: Annotations
                      , moveNext        :: Move
@@ -59,14 +59,10 @@ data Move = HalfMove { moveNumber      :: Int
           | End ResultValue
           | VariantEnd
 
-data PieceMove = ShortCastle
-               | LongCastle
-               | PieceMove Piece Disambiguate Capture Square
-               | PawnMove { pawnStartFile   :: (Maybe File)
-                          , pawnCapture     :: Capture
-                          , pawnDestination :: Square
-                          , pawnPromotion   :: Promotion
-                          }
+data Action = ShortCastle
+            | LongCastle
+            | PieceMove Piece Disambiguate Capture Square
+            | PawnMove Capture Square Promotion
 
 data Piece = Knight | Bishop | Rook | Queen | King
 type File = Char
@@ -76,7 +72,7 @@ data Disambiguate = FileDisambiguate File
                   | RankDisambiguate Rank
                   | SquareDisambiguate Square
                   | NoDisambiguate
-data Capture = Capture | NoCapture
+data Capture = Capture | CaptureFromFile File | NoCapture
 data Promotion = PromoteTo Piece
                | NoPromotion
 data Check = None | Check | Mate
