@@ -11,17 +11,20 @@ import           Prelude                  hiding (readFile)
 import           Text.Parsec
 import           Text.Parsec.Text         (Parser)
 
-parseFilePath :: FilePath -> IO (Either ParseError Match)
-parseFilePath = parseFromFile parseMatch
+parseFilePath :: FilePath -> IO (Either ParseError [Match])
+parseFilePath = parseFromFile parseMatches
 
 parseFromFile :: Parser a -> FilePath -> IO (Either ParseError a)
 parseFromFile parser file = parse parser file <$> readFile file
 
+parseMatches :: Parser [Match]
+parseMatches = many parseMatch <* eof
+
 parseMatch :: Parser Match
-parseMatch = Match <$> parseHeaders <*> parseFirstMove
+parseMatch = Match <$> parseHeaders <*> parseFirstMove <* spaces
 
 parseFirstMove :: Parser Move
-parseFirstMove = spaces *> parseMove 0 <* spaces <* eof
+parseFirstMove = parseMove 0
 
 parseMove :: Int -> Parser Move
 parseMove m = eithers [parseVariantEnd, parseResult] (parseHalfMove m)

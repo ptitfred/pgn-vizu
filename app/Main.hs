@@ -41,15 +41,23 @@ help French = do
   newline
   putStrLn " help            : ce message"
 
-checkFiles :: [String] -> IO ()
+checkFiles :: [FilePath] -> IO ()
 checkFiles files = mapM checkFile files >>= sumUpChecks
 
-checkFile :: String -> IO Bool
-checkFile file = do
-  r <- parseFilePath file
-  case r of
-    Right _ -> True  <$ printfLn "%s OK" file
-    Left  e -> False <$ printfLn "%s KO" file <* putStr (asMessage e)
+checkFile :: FilePath -> IO Bool
+checkFile file = parseFilePath file >>= either failure success
+  where success matches = True  <$ printChecked file (length matches)
+        failure e       = False <$ printNotChecked file e
+
+printChecked :: FilePath -> Int -> IO ()
+printChecked f 0  = printfLn "%s OK (no match)"   f
+printChecked f 1  = printfLn "%s OK (1 match)"    f
+printChecked f ms = printfLn "%s OK (%i matches)" f ms
+
+printNotChecked :: FilePath -> ParseError -> IO ()
+printNotChecked f e = do
+  printfLn "%s KO" f
+  putStr (asMessage e)
     where asMessage = indent . show
           indent    = unlines . map (printf "  %s") . lines
 
@@ -60,17 +68,12 @@ exit :: Int -> IO ()
 exit 0 = exitSuccess
 exit n = exitWith (ExitFailure n)
 
-showFiles :: Locale -> [String] -> IO ()
-showFiles locale = sequence_ . nlSeparated . showAll
-  where showAll     = map (showFile locale)
-        nlSeparated = intersperse newline
+showFiles :: Locale -> [FilePath] -> IO ()
+showFiles locale = mapNlM_ (showFile locale)
 
-showFile :: Locale -> String -> IO ()
-showFile locale file = do
-  result <- parseFilePath file
-  case result of
-    Right match      -> printMatch locale match
-    Left  parseError -> print parseError
+showFile :: Locale -> FilePath -> IO ()
+showFile locale file = parseFilePath file >>= either print printMatches
+  where printMatches = mapNlM_ (printMatch locale)
 
 unknown :: Locale -> String -> IO ()
 unknown English = printfLn "Unknown action '%s'"
@@ -91,6 +94,9 @@ chooseLocale locale =
     "fr" -> French
     _    -> English
   where shortLocale = take 2 locale
+
+mapNlM_ :: (a -> IO ()) -> [a] -> IO ()
+mapNlM_ action = sequence_ . intersperse newline . map action
 
 newline :: IO ()
 newline = putStrLn ""
