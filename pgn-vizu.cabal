@@ -19,6 +19,7 @@ library
                      , Models
                      , Printer
                      , FEN
+  other-modules:       ParsingUtilities
   ghc-options:         -Wall -Werror
   build-depends:       base >= 4.7 && < 5
                      , text

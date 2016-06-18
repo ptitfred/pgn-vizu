@@ -7,6 +7,7 @@ module FEN
     ) where
 
 import Models
+import ParsingUtilities
 
 import Control.Monad      (guard)
 import Data.Char          (digitToInt)
@@ -99,6 +100,3 @@ parseFullmoveNumber = parseInt
 
 parseInt :: Parser Int
 parseInt = read <$> many1 digit
-
-tries :: [Parser a] -> Parser a
-tries = choice . map try
