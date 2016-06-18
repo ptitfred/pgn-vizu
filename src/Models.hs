@@ -1,6 +1,11 @@
 module Models
     ( Annotation(..)
     , Annotations
+    , Board(..)
+    , CastlingCapacity(..)
+    , EnPassant
+    , Position
+    , SquareContent(..)
     , Capture(..)
     , Check(..)
     , Color(..)
@@ -25,6 +30,13 @@ module Models
 data Match = Match { matchHeaders :: Headers
                    , matchMoves   :: Move
                    }
+
+data Board = Board Position Color [CastlingCapacity] EnPassant Int Int
+type Position = [[SquareContent]]
+data SquareContent = Void | ColoredPiece Piece Color
+type EnPassant = Maybe Square
+
+data CastlingCapacity = CanLongCastle Color | CanShortCastle Color
 
 data Header = Event String
             | Site String
@@ -63,7 +75,7 @@ data Action = ShortCastle
             | PieceMove Piece Disambiguate Capture Square
             | PawnMove Capture Square Promotion
 
-data Piece = Knight | Bishop | Rook | Queen | King
+data Piece = Pawn | Knight | Bishop | Rook | Queen | King
 type File = Char
 type Rank = Char
 type Square = (File, Rank)

@@ -1,6 +1,7 @@
 module Printer
     ( Locale(..)
     , printMatch
+    , printBoard
     ) where
 
 import Models
@@ -10,6 +11,8 @@ import Control.Monad.Reader   (ReaderT, runReaderT, asks)
 import Control.Monad.IO.Class (liftIO)
 import Data.List              (intersperse)
 
+import Text.Printf            (PrintfType, printf)
+
 data Locale = English | French
 data Context = Context { locale :: Locale }
 
@@ -17,6 +20,74 @@ type Printer = ReaderT Context IO
 
 printMatch :: Locale -> Match -> IO ()
 printMatch l m = runReaderT (matchPrinter m) (Context l)
+
+printBoard :: Locale -> Board -> IO ()
+printBoard l (Board position color castlingCapacities ep hm fm) = do
+  mapM_ (putStrLn . map (showSquareContent l)) position
+  printTurnToMove l fm color
+  printCastlingCapacities l castlingCapacities
+  printEnPassant l ep
+  printHalfmovesClock l hm
+
+printTurnToMove :: Locale -> Int -> Color -> IO ()
+printTurnToMove English m c = printfLn "%i. %s to play"      m (showColor English c)
+printTurnToMove French  m c = printfLn "%i. aux %s de jouer" m (showColor French  c)
+
+printCastlingCapacities :: Locale -> [CastlingCapacity] -> IO ()
+printCastlingCapacities English [] = putStrLn "nobody can castle"
+printCastlingCapacities French  [] = putStrLn "personne ne peut roquer"
+printCastlingCapacities l       cs = mapM_ (printCastlingCapacity l) cs
+
+printCastlingCapacity :: Locale -> CastlingCapacity -> IO ()
+printCastlingCapacity English (CanLongCastle  c) = printfLn "%s can O-O-O" $ showColor English c
+printCastlingCapacity English (CanShortCastle c) = printfLn "%s can O-O"   $ showColor English c
+printCastlingCapacity French  (CanLongCastle  c) = printfLn "les %s peuvent O-O-O" $ showColor French c
+printCastlingCapacity French  (CanShortCastle c) = printfLn "les %s peuvent O-O"   $ showColor French c
+
+printEnPassant :: Locale -> EnPassant -> IO ()
+printEnPassant English (Just sq) = printfLn "%s can be taken en passant" $ showSquare sq
+printEnPassant French  (Just sq) = printfLn "%s peut être pris en passant" $ showSquare sq
+printEnPassant _        Nothing  = return ()
+
+printHalfmovesClock :: Locale -> Int -> IO ()
+printHalfmovesClock _ 0  = return ()
+printHalfmovesClock English 1  = putStrLn "1 move since last capture or pawn move"
+printHalfmovesClock English hm = printfLn "%i moves since last capture or pawn move" hm
+printHalfmovesClock French  1  = putStrLn "1 coup depuis la dernière capture ou mouvement de pion"
+printHalfmovesClock French  hm = printfLn "%i coups depuis la dernière capture ou mouvement de pion" hm
+
+showSquareContent :: Locale -> SquareContent -> Char
+showSquareContent _        Void                       = '.'
+showSquareContent English (ColoredPiece Pawn   White) = 'P'
+showSquareContent English (ColoredPiece Knight White) = 'N'
+showSquareContent English (ColoredPiece Bishop White) = 'B'
+showSquareContent English (ColoredPiece Rook   White) = 'R'
+showSquareContent English (ColoredPiece Queen  White) = 'Q'
+showSquareContent English (ColoredPiece King   White) = 'K'
+showSquareContent English (ColoredPiece Pawn   Black) = 'p'
+showSquareContent English (ColoredPiece Knight Black) = 'n'
+showSquareContent English (ColoredPiece Bishop Black) = 'b'
+showSquareContent English (ColoredPiece Rook   Black) = 'r'
+showSquareContent English (ColoredPiece Queen  Black) = 'q'
+showSquareContent English (ColoredPiece King   Black) = 'k'
+showSquareContent French  (ColoredPiece Pawn   White) = 'P'
+showSquareContent French  (ColoredPiece Knight White) = 'C'
+showSquareContent French  (ColoredPiece Bishop White) = 'F'
+showSquareContent French  (ColoredPiece Rook   White) = 'T'
+showSquareContent French  (ColoredPiece Queen  White) = 'D'
+showSquareContent French  (ColoredPiece King   White) = 'R'
+showSquareContent French  (ColoredPiece Pawn   Black) = 'p'
+showSquareContent French  (ColoredPiece Knight Black) = 'c'
+showSquareContent French  (ColoredPiece Bishop Black) = 'f'
+showSquareContent French  (ColoredPiece Rook   Black) = 't'
+showSquareContent French  (ColoredPiece Queen  Black) = 'd'
+showSquareContent French  (ColoredPiece King   Black) = 'r'
+
+showColor :: Locale -> Color -> String
+showColor English White = "white"
+showColor English Black = "black"
+showColor French  White = "blancs"
+showColor French  Black = "noirs"
 
 matchPrinter :: Match -> Printer ()
 matchPrinter m = do
@@ -142,11 +213,13 @@ showPiece :: Piece -> Printer String
 showPiece p = showPieceLocalized p <$> asks locale
 
 showPieceLocalized :: Piece -> Locale -> String
+showPieceLocalized Pawn   English = "P"
 showPieceLocalized Knight English = "N"
 showPieceLocalized Bishop English = "B"
 showPieceLocalized Rook   English = "R"
 showPieceLocalized Queen  English = "Q"
 showPieceLocalized King   English = "K"
+showPieceLocalized Pawn   French  = "P"
 showPieceLocalized Knight French  = "C"
 showPieceLocalized Bishop French  = "F"
 showPieceLocalized Rook   French  = "T"
@@ -229,3 +302,6 @@ putStrLnIO = liftIO . putStrLn
 
 putStrIO :: String -> Printer ()
 putStrIO = liftIO . putStr
+
+printfLn :: PrintfType r => String -> r
+printfLn p = printf (p ++ "\n")

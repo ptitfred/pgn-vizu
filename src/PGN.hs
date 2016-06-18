@@ -4,6 +4,7 @@ module PGN
     ) where
 
 import Models
+import ParsingUtilities
 
 import qualified Control.Applicative as A ((<|>))
 import           Data.Text.IO             (readFile)
@@ -216,19 +217,3 @@ parseHeaderName = many (noneOf " ")
 
 parseHeaderValue :: Parser String
 parseHeaderValue = textBetween '"' '"'
-
-{- Utilities -}
-
-textBetween :: Char -> Char -> Parser String
-textBetween c1 c2 = between (char c1) (char c2) content
-  where content = many (noneOf [c2])
-
-eithers :: [Parser (Maybe a)] -> Parser a -> Parser a
-eithers []         main = main
-eithers (alt:alts) main = alt >>= maybe (eithers alts main) return
-
-tries :: [Parser a] -> Parser a
-tries = choice . map try
-
-triesOr :: [Parser a] -> a -> Parser a
-triesOr alternatives defaultValue = option defaultValue (tries alternatives)
