@@ -9,10 +9,11 @@ module FEN
 import Models
 import ParsingUtilities
 
-import Control.Monad      (guard)
-import Data.Char          (digitToInt)
+import Control.Applicative (Alternative)
+import Control.Monad       (guard)
+import Data.Char           (digitToInt)
 import Text.Parsec
-import Text.Parsec.String (Parser)
+import Text.Parsec.String  (Parser)
 
 type FEN = String
 
@@ -30,17 +31,17 @@ boardParser = Board <$> parsePosition           <* space
                     <*> parseColor              <* space
                     <*> parseCastlingCapacities <* space
                     <*> parseEnPassant          <* space
-                    <*> parseHalfmoveClock      <* space
-                    <*> parseFullmoveNumber
+                    <*> parseInt                <* space
+                    <*> parseInt
 
 parsePosition :: Parser Position
-parsePosition = parseRow `sepBy` char '/'
+parsePosition = assuming (ofLength 8) $ parseRow `sepBy` char '/'
 
 parseRow :: Parser [SquareContent]
-parseRow = do
-  squares <- mconcat <$> many parseSquareContent
-  guard (length squares == 8)
-  return squares
+parseRow = assuming (ofLength 8) $ mconcat <$> many parseSquareContent
+
+ofLength :: Int -> [a] -> Bool
+ofLength n xs = length xs == n
 
 parseSquareContent :: Parser [SquareContent]
 parseSquareContent = tries [ [ColoredPiece Pawn   White] <$ char 'P'
@@ -59,10 +60,10 @@ parseSquareContent = tries [ [ColoredPiece Pawn   White] <$ char 'P'
                            ]
 
 parseVoids :: Parser [SquareContent]
-parseVoids = do
-  n <- digitToInt <$> digit
-  guard (n >= 1 && n<= 8)
-  return $ replicate n Void
+parseVoids = voids . digitToInt <$> oneOf "12345678"
+
+voids :: Int -> [SquareContent]
+voids n = replicate n Void
 
 parseColor :: Parser Color
 parseColor = tries [ White <$ char 'w'
@@ -92,11 +93,11 @@ parseEnPassantSquare = (,) <$> parseFile <*> oneOf "36"
 parseFile :: Parser File
 parseFile = oneOf "abcdefgh"
 
-parseHalfmoveClock :: Parser Int
-parseHalfmoveClock = parseInt
-
-parseFullmoveNumber :: Parser Int
-parseFullmoveNumber = parseInt
-
 parseInt :: Parser Int
 parseInt = read <$> many1 digit
+
+assuming :: (Monad m, Alternative m) => (a -> Bool) -> m a -> m a
+assuming check action = do
+  result <- action
+  guard (check result)
+  return result
