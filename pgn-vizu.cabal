@@ -18,6 +18,7 @@ library
   exposed-modules:     PGN
                      , Models
                      , Printer
+                     , FEN
   ghc-options:         -Wall -Werror
   build-depends:       base >= 4.7 && < 5
                      , text

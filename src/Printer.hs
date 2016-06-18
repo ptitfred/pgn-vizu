@@ -142,11 +142,13 @@ showPiece :: Piece -> Printer String
 showPiece p = showPieceLocalized p <$> asks locale
 
 showPieceLocalized :: Piece -> Locale -> String
+showPieceLocalized Pawn   English = "P"
 showPieceLocalized Knight English = "N"
 showPieceLocalized Bishop English = "B"
 showPieceLocalized Rook   English = "R"
 showPieceLocalized Queen  English = "Q"
 showPieceLocalized King   English = "K"
+showPieceLocalized Pawn   French  = "P"
 showPieceLocalized Knight French  = "C"
 showPieceLocalized Bishop French  = "F"
 showPieceLocalized Rook   French  = "T"
