@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     PGN
                      , Models
+                     , Move
                      , Printer
                      , FEN
   other-modules:       ParsingUtilities
@@ -26,6 +27,7 @@ library
                      , parsec
                      , mtl
                      , transformers
+                     , lens
   default-language:    Haskell2010
 
 executable pgn-vizu

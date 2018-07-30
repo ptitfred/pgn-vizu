@@ -1,17 +1,20 @@
 module Printer
     ( Locale(..)
     , printMatch
+    , printMatchPositions
     , printBoard
     ) where
 
-import Models
+import           FEN                    (defaultBoard)
+import           Models
+import           Move
 
-import Control.Monad          (unless)
-import Control.Monad.Reader   (ReaderT, runReaderT, asks)
-import Control.Monad.IO.Class (liftIO)
-import Data.List              (intersperse)
+import           Control.Monad          (unless)
+import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.Reader   (ReaderT, asks, runReaderT)
+import           Data.List              (intersperse)
 
-import Text.Printf            (PrintfType, printf)
+import           Text.Printf            (PrintfType, printf)
 
 data Locale = English | French
 data Context = Context { locale :: Locale }
@@ -20,6 +23,9 @@ type Printer = ReaderT Context IO
 
 printMatch :: Locale -> Match -> IO ()
 printMatch l m = runReaderT (matchPrinter m) (Context l)
+
+printMatchPositions :: Locale -> Match -> IO ()
+printMatchPositions l m = runReaderT (matchPositionPrinter m) (Context l)
 
 printBoard :: Locale -> Board -> IO ()
 printBoard l (Board position color castlingCapacities ep hm fm) = do
@@ -97,6 +103,14 @@ matchPrinter m = do
   localizedMovesTitle <$> asks locale >>= putStrIO
   printMove $ matchMoves m
 
+matchPositionPrinter :: Match -> Printer ()
+matchPositionPrinter m = do
+  localizedHeadersTitle <$> asks locale >>= putStrLnIO
+  printHeaders $ matchHeaders m
+  putStrLnIO ""
+  localizedMovesTitle <$> asks locale >>= putStrIO
+  printMovePosition defaultBoard $ matchMoves m
+
 localizedHeadersTitle :: Locale -> String
 localizedHeadersTitle English = "Headers:"
 localizedHeadersTitle French  = "En-têtes :"
@@ -148,6 +162,40 @@ showHeaderLocalized (Opening opening)French  = "Ouverture :       " ++ opening
 showHeaderLocalized (Termination t)  French  = "Terminaison :     " ++ t
 showHeaderLocalized (Annotator an)   French  = "Annoteur :        " ++ an
 showHeaderLocalized (Other k v)      French  = k ++ " :  " ++ v
+
+printBoardPosition :: Board -> Printer ()
+printBoardPosition (Board p _ _ _ _ _) = do
+  l <- asks locale
+  mapM_ (putStrLnIO . map (showSquareContent l)) p
+
+printMovePosition :: Board -> Move -> Printer ()
+printMovePosition _ VariantEnd = return ()
+printMovePosition _ (End result) = do
+  putStrLnIO ""
+  putStrIO "      "
+  printResult result
+printMovePosition board move@(HalfMove n c pm ch as nx _) = do
+  let newBoard = moveBoard board move
+  putStrLnIO ""
+  putStrIO "  "
+  printMoveNumber n
+  case c of
+    White -> return ()
+    Black -> putStrIO "…"
+  printPieceMove pm
+  printCheck ch
+  printAnnotations as
+  putStrLnIO ""
+  printBoardPosition newBoard
+  case c of
+    White -> if null as
+             then putStrIO " "
+             else do
+               putStrLnIO ""
+               putStrIO $ lpad (2 + 4 + 10 + 1 + 1) ""
+    Black -> return ()
+  putStrLnIO ""
+  printMovePosition newBoard nx
 
 printMove :: Move -> Printer ()
 printMove VariantEnd = return ()
