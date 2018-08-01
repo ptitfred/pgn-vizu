@@ -33,7 +33,7 @@ data Match = Match { matchHeaders :: Headers
 
 data Board = Board Position Color [CastlingCapacity] EnPassant Int Int
 type Position = [[SquareContent]]
-data SquareContent = Void | ColoredPiece Piece Color
+data SquareContent = Void | ColoredPiece Piece Color deriving Eq
 type EnPassant = Maybe Square
 
 data CastlingCapacity = CanLongCastle Color | CanShortCastle Color
@@ -57,7 +57,7 @@ data Header = Event String
             | Other String String
 type Headers = [Header]
 
-data Color = White | Black
+data Color = White | Black deriving Eq
 
 data Move = HalfMove { moveNumber      :: Int
                      , moveColor       :: Color
@@ -75,7 +75,7 @@ data Action = ShortCastle
             | PieceMove Piece Disambiguate Capture Square
             | PawnMove Capture Square Promotion
 
-data Piece = Pawn | Knight | Bishop | Rook | Queen | King
+data Piece = Pawn | Knight | Bishop | Rook | Queen | King deriving Eq
 type File = Char
 type Rank = Char
 type Square = (File, Rank)

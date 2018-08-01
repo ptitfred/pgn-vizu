@@ -19,6 +19,7 @@ main = do
 dispatch :: Locale -> [String] -> IO ()
 dispatch _      ("check" : files) = checkFiles files
 dispatch locale ("show"  : files) = showFiles locale files
+dispatch locale ("board" : files) = showPositions locale files
 dispatch locale ("help"  : _    ) = help locale
 dispatch locale ("-h"    : _    ) = help locale
 dispatch locale ("--help": _    ) = help locale
@@ -30,12 +31,16 @@ help English = do
   putStrLn "Commands:"
   putStrLn " show files*  : show content of PGN files"
   newline
+  putStrLn " board files* : show content of PGN files with board positions"
+  newline
   putStrLn " check files* : attempt to parse PGN files"
   newline
   putStrLn " help         : this message"
 help French = do
   putStrLn "Commandes:"
   putStrLn " show fichiers*  : affiche le contenu des fichiers PGN"
+  newline
+  putStrLn " board fichiers* : affiche le contenu des fichiers PGN avec des positions sur échiquiers"
   newline
   putStrLn " check fichiers* : essaie de lire les fichiers PGN"
   newline
@@ -74,6 +79,13 @@ showFiles locale = mapLnM_ (showFile locale)
 showFile :: Locale -> FilePath -> IO ()
 showFile locale file = parseFilePath file >>= either print printMatches
   where printMatches = mapLnM_ (printMatch locale)
+
+showPositions :: Locale -> [FilePath] -> IO ()
+showPositions locale = mapLnM_ (showPosition locale)
+
+showPosition :: Locale -> FilePath -> IO ()
+showPosition locale file = parseFilePath file >>= either print printPositions
+  where printPositions = mapLnM_ (printMatchPositions locale)
 
 unknown :: Locale -> String -> IO ()
 unknown English = printfLn "Unknown action '%s'"
